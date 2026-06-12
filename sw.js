@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fathalla-receiving-v6';
+const CACHE_NAME = 'fathalla-receiving-v7';
 const ASSETS = [
   './',
   './index.html',
