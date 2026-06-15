@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fathalla-receiving-v8';
+const CACHE_NAME = 'fathalla-receiving-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,7 @@ const ASSETS = [
   './logo.png'
 ];
 
-// التثبيت المبدئي للملفات في الذاكرة
+// التثبيت المبدئي للملفات في كاش الذاكرة التابع للموبايل
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -16,7 +16,7 @@ self.addEventListener('install', (e) => {
   );
 });
 
-// تفعيل المحرك وتصفية النسخ القديمة تلقائياً
+// تفعيل المحرك وتصفية الكاش القديم وتحديثه تلقائياً
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -31,9 +31,9 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// إستراتيجية (Network-First): جلب البيانات من الإنترنت أولاً للتحديث الفوري، والرجوع للكاش عند انقطاع الشبكة
+// استراتيجية (Network-First): جلب البيانات من الإنترنت أولاً للتحديث اللحظي ثم الرجوع لذاكرة التخزين عند فصل الشبكة
 self.addEventListener('fetch', (e) => {
-  // حماية وتصفية الطلبات لمنع توقف نظام الأوفلاين بسبب إضافات المتصفحات
+  // حماية وتصفية الطلبات المباشرة لضمان عدم توقف النظام أوفلاين بسبب ملحقات المتصفحات الخارجية
   if (e.request.method !== 'GET' || !e.request.url.startsWith('http')) {
     return;
   }
@@ -41,6 +41,7 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(e.request)
       .then((networkResponse) => {
+        // إذا نجح جلب البيانات عبر الإنترنت، نحدث الكاش فوراً بالنسخة الجديدة ونعرضها للمستخدم
         if (networkResponse.status === 200) {
           const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -50,6 +51,7 @@ self.addEventListener('fetch', (e) => {
         return networkResponse;
       })
       .catch(() => {
+        // في حالة عدم توفر اتصال بالشبكة، يتم استدعاء النسخة المحفوظة مسبقاً داخل كاش الموبايل مباشرة
         return caches.match(e.request);
       })
   );
