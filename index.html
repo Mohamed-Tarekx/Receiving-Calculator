@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حاسبة الإستلام - فتح الله ماركت</title>
+    <title>حاسبة الاستلام - test</title>
     
     <!-- وسوم تشغيل التطبيق في شاشة كاملة وبمظهر مستقل على الآيفون iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="حاسبة الإستلام">
+    <meta name="apple-mobile-web-app-title" content="حاسبة الاستلام - test">
     <link rel="apple-touch-icon" href="./logo.png">
     
     <!-- ربط ملف تعريف هوية التطبيق PWA للاندرويد والآيفون -->
     <link rel="manifest" href="./manifest.json">
+
+    <!-- مكتبة قراءة ملفات الإكسيل (تعمل أوفلاين بعد التخزين) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -31,9 +34,9 @@
             --danger: #ef4444;
             --danger-bg: #fef2f2;
             --danger-border: #fca5a5;
-            --blue-bg: #fff7ed; /* Light orange/cream tone to match brand */
+            --blue-bg: #fff7ed; 
             --blue-border: #ffedd5;
-            --dark-header: #111827; /* Fathalla Brand Black/Charcoal */
+            --dark-header: #111827; 
         }
 
         * {
@@ -42,16 +45,15 @@
             padding: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
-            user-select: none; /* Prevent easy copying of text */
+            user-select: none;
         }
 
         body {
             background-color: var(--bg-main);
             color: var(--text-main);
-            padding-bottom: 80px; /* Space for fixed footer */
+            padding-bottom: 20px;
         }
 
-        /* Header Style */
         header {
             background-color: var(--dark-header);
             color: white;
@@ -104,14 +106,12 @@
             color: white;
         }
 
-        /* Container & Grid Layout */
         .container {
             max-width: 480px;
             margin: 0 auto;
             padding: 16px;
         }
 
-        /* Main App Titles */
         .main-title {
             font-size: 1.7rem;
             font-weight: 850;
@@ -137,7 +137,6 @@
             gap: 12px;
         }
 
-        /* Card Button style without icon */
         .menu-card {
             background-color: var(--bg-card);
             border: 1px solid #e2e8f0;
@@ -173,7 +172,6 @@
             margin-right: 10px;
         }
 
-        /* Module Forms & Inputs */
         .module-view {
             display: none;
             animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -254,7 +252,6 @@
             box-shadow: 0 0 0 3px rgba(244, 129, 32, 0.15);
         }
 
-        /* --- PREMIUM CUSTOM DATE WIDGET STYLES --- */
         .custom-date-container {
             border: 1px solid #cbd5e1;
             border-radius: 10px;
@@ -272,7 +269,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            direction: ltr; /* Keeps layout Day / Month / Year left-to-right visually */
+            direction: ltr; 
         }
         
         .date-inputs-row input[type="number"] {
@@ -286,7 +283,7 @@
             outline: none !important;
             color: var(--dark-header);
             font-weight: 600;
-            -moz-appearance: textfield; /* Remove numeric spinner arrows */
+            -moz-appearance: textfield; 
         }
         
         .date-inputs-row input[type="number"]::-webkit-outer-spin-button,
@@ -295,17 +292,9 @@
             margin: 0;
         }
         
-        .date-inputs-row .date-day {
-            flex: 1.5;
-        }
-        
-        .date-inputs-row .date-month {
-            flex: 1.5;
-        }
-        
-        .date-inputs-row .date-year {
-            flex: 2.2;
-        }
+        .date-inputs-row .date-day { flex: 1.5; }
+        .date-inputs-row .date-month { flex: 1.5; }
+        .date-inputs-row .date-year { flex: 2.2; }
         
         .date-slash {
             color: var(--text-muted);
@@ -341,7 +330,6 @@
             border: none !important;
         }
 
-        /* --- EXPLANATION STEPS BOX --- */
         .steps-box {
             background-color: #f8fafc;
             border-right: 4px solid var(--primary);
@@ -368,14 +356,8 @@
             padding-bottom: 8px;
         }
 
-        .steps-box ol {
-            padding-right: 20px;
-        }
-
-        .steps-box li {
-            margin-bottom: 10px;
-        }
-
+        .steps-box ol { padding-right: 20px; }
+        .steps-box li { margin-bottom: 10px; }
         .steps-box code {
             background-color: #fee2e2;
             padding: 2px 6px;
@@ -386,7 +368,6 @@
             font-size: 0.95rem;
         }
 
-        /* Dynamic Sample Weights Container */
         .samples-container {
             background-color: #f8fafc;
             padding: 16px;
@@ -414,11 +395,8 @@
             transition: background 0.2s;
         }
 
-        .add-sample-btn:active {
-            background-color: var(--primary);
-        }
+        .add-sample-btn:active { background-color: var(--primary); }
 
-        /* Results Display */
         .results-section {
             margin-top: 28px;
             border-top: 2px dashed #cbd5e1;
@@ -510,7 +488,12 @@
             border: 1px solid #fef08a;
         }
 
-        /* Segment Switch (e.g., Hank vs Mombar) */
+        .alert-banner.green {
+            background-color: var(--success-bg);
+            color: #065f46;
+            border: 1px solid var(--success-border);
+        }
+
         .segment-control {
             display: flex;
             background-color: #e2e8f0;
@@ -538,10 +521,9 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.06);
         }
 
-        /* Toast notifications */
         .app-toast {
             position: fixed;
-            bottom: 80px;
+            bottom: 20px; /* Adjusted since footer is removed */
             left: 50%;
             transform: translateX(-50%) translateY(100px);
             background-color: var(--dark-header);
@@ -562,54 +544,19 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* FIXED PROTECTED FOOTER WITH MOBILE WORD-WRAP FIX */
-        .secure-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: var(--dark-header);
-            color: #94a3b8;
-            text-align: center;
-            padding: 14px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            border-top: 3px solid var(--primary);
-            z-index: 1000;
-            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-            letter-spacing: 0.5px;
-            white-space: nowrap; /* FORCE ONE SINGLE LINE ALWAYS */
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .secure-footer span {
-            color: var(--primary);
-            font-weight: bold;
-        }
-
-        /* Animations */
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body oncontextmenu="return false;"> <!-- Block Right Click -->
+<body oncontextmenu="return false;">
 
-    <!-- Header -->
     <header>
         <div class="header-container">
             <div class="header-title">
-                <!-- Customized SVG Icon aligning with premium Fathalla theme -->
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="9" y1="22" x2="9" y2="16"></line><line x1="9" y1="16" x2="15" y2="16"></line><line x1="15" y1="16" x2="15" y2="22"></line><line x1="15" y1="2" x2="15" y2="6"></line><line x1="9" y1="2" x2="9" y2="6"></line><line x1="18" y1="6" x2="6" y2="6"></line></svg>
-                حاسبة الإستلام - فتح الله ماركت
+                حاسبة الاستلام - test
             </div>
             <button id="mainHomeBtn" class="home-btn" style="display: none;" onclick="showHome()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
@@ -620,9 +567,13 @@
     <div class="container">
         <!-- Main Navigation Menu -->
         <div id="homeView">
-            <h2 class="main-title">حاسبة الإستلام</h2>
+            <h2 class="main-title">حاسبة الاستلام</h2>
             <p class="welcome-msg">مرحباً بك في النظام الذكي لحسابات البضائع المستلمة بدقة وسهولة:</p>
             <div class="menu-grid">
+                <button class="menu-card" onclick="openModule('check100')" style="background-color: #fff7ed; border-color: #f48120;">
+                    <span class="card-title" style="color: #d66810;">قائمة التشييك 100%</span>
+                    <span class="arrow-left" style="color: #d66810;">&#10094;</span>
+                </button>
                 <button class="menu-card" onclick="openModule('natural')">
                     <span class="card-title">الجبن الطبيعي</span>
                     <span class="arrow-left">&#10094;</span>
@@ -647,6 +598,11 @@
                     <span class="card-title">الرز والسكر والدقيق</span>
                     <span class="arrow-left">&#10094;</span>
                 </button>
+                <!-- NEW FISH MODULE BUTTON -->
+                <button class="menu-card" onclick="openModule('fish')">
+                    <span class="card-title">السمك (المرسي / الحلقة)</span>
+                    <span class="arrow-left">&#10094;</span>
+                </button>
                 <button class="menu-card" onclick="openModule('casings')">
                     <span class="card-title">الهانك والممبار</span>
                     <span class="arrow-left">&#10094;</span>
@@ -658,7 +614,36 @@
             </div>
         </div>
 
-        <!-- 1. Natural Cheese Module -->
+        <div id="check100View" class="module-view">
+            <div class="module-header">
+                <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                <span class="module-title">قائمة التشييك 100%</span>
+            </div>
+            
+            <div class="info-box">
+                <b>ملاحظة هامة جداً قبل الرفع:</b> 
+                يجب أن تفتح شيت الإكسيل أولاً وتضغط كليك يمين على الجدول المحوري (Pivot Table) وتختار (Expand All / توسيع الكل) ليظهر عمود "نوع المخالفة" أمامك على الشاشة قبل الحفظ، وإلا سيقرأ البرنامج الإجمالي فقط!
+            </div>
+
+            <!-- Database Status -->
+            <div id="dbStatusIndicator"></div>
+
+            <div class="form-group" style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 24px;">
+                <label style="color: var(--primary-dark); font-size: 0.95rem; margin-bottom: 10px;">إعداد وتحديث قاعدة البيانات (رفع ملف الإكسيل)</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" onchange="handleExcelUpload(event)" style="padding: 10px; font-size: 0.9rem; background: #fff;">
+            </div>
+
+            <div class="form-group">
+                <label>بحث برقم الكود أو اسم الشركة</label>
+                <input type="text" id="companySearchInput" placeholder="مثال: 121 أو الصقر" oninput="searchCompany()">
+            </div>
+
+            <div class="results-section" id="checkResults" style="display: none;">
+                <h3 class="results-title">نتيجة البحث:</h3>
+                <div id="checkResultContent"></div>
+            </div>
+        </div>
+
         <div id="naturalView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -698,7 +683,6 @@
                     <div class="result-box-value" id="natResComp">0 كجم</div>
                 </div>
             </div>
-            <!-- Dynamic Steps Box -->
             <div class="steps-box" id="natStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
@@ -710,7 +694,6 @@
             </div>
         </div>
 
-        <!-- 2. Processed Cheese / Pickles Module -->
         <div id="processedView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -750,7 +733,6 @@
                     <div class="result-box-value" id="procResComp">0 كجم</div>
                 </div>
             </div>
-            <!-- Dynamic Steps Box -->
             <div class="steps-box" id="procStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
@@ -762,7 +744,6 @@
             </div>
         </div>
 
-        <!-- 3. Roumi Cheese Module -->
         <div id="roumiView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -772,7 +753,6 @@
             
             <div class="form-group">
                 <label>تاريخ الإنتاج المدون</label>
-                <!-- NEW PREMIUM DATE WIDGET (Day/Month/Year) -->
                 <div class="custom-date-container" id="widget-roumiProdDate">
                     <div class="date-inputs-row">
                         <input type="number" class="date-day" placeholder="يوم" min="1" max="31" inputmode="numeric" oninput="onWidgetInput('roumiProdDate')">
@@ -782,7 +762,6 @@
                         <input type="number" class="date-year" placeholder="سنة" min="1900" max="2100" inputmode="numeric" oninput="onWidgetInput('roumiProdDate')">
                         
                         <div class="calendar-trigger-wrapper">
-                            <!-- Premium Fathalla calendar icon -->
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                             <input type="date" class="hidden-date-picker" onchange="onWidgetPickerChange('roumiProdDate', this.value)">
                         </div>
@@ -804,7 +783,6 @@
             </div>
         </div>
 
-        <!-- 4. Pastrami Module -->
         <div id="pastramiView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -842,7 +820,6 @@
                     <div class="result-box-value">0.500 كجم</div>
                 </div>
             </div>
-            <!-- Dynamic Steps Box -->
             <div class="steps-box" id="pastStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
@@ -854,7 +831,6 @@
             </div>
         </div>
 
-        <!-- 5. Luncheon Module -->
         <div id="luncheonView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -884,7 +860,6 @@
                     <div class="result-box-value" id="lunchResBonus">0 كجم</div>
                 </div>
             </div>
-            <!-- Dynamic Steps Box -->
             <div class="steps-box" id="lunchStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
@@ -896,7 +871,6 @@
             </div>
         </div>
 
-        <!-- 6. Dry Goods Module -->
         <div id="dryView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -909,13 +883,11 @@
                 <input type="number" id="dryTotalQty" oninput="calculateDry()">
             </div>
             
-            <!-- NEW SEGMENT CONTROL inside Dry Goods to choose calculation method for quantities >= 100 kg -->
             <div class="segment-control" id="dryMethodSegment" style="display: none;">
                 <button id="segmentDrySample" class="segment-btn active" onclick="switchDryMethod('sample')">طريقة عينة الـ 100 كجم</button>
                 <button id="segmentDryTotal" class="segment-btn" onclick="switchDryMethod('total')">وزن الشحنة بالكامل</button>
             </div>
 
-            <!-- dynamic fields based on quantity and selected method -->
             <div class="form-group" id="drySample100Group">
                 <label>وزن عينة الـ 100 كجم الفعلي</label>
                 <input type="number" id="drySampleWeight" oninput="calculateDry()">
@@ -936,20 +908,72 @@
                     <div class="result-box-value" id="dryResComp">0 كجم</div>
                 </div>
             </div>
-            <!-- Dynamic Steps Box -->
             <div class="steps-box" id="dryStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
                     <li>نأخذ عينة اختبار وزنها الإجمالي 100 كيلو من البضاعة الموردة بالكامل ونقوم بوزنها بدقة.</li>
                     <li>تُعطى نسبة سماح حتى 1 كجم، بحيث يكون الحد الأدنى المقبول للاستلام الآمن هو 99 كجم.</li>
-                    <li>إذا قل وزن عينة الـ 100 كجم عن 99 كجم: نحدد <b>العجز</b> بطرح الوزن الموزون من 99.</li>
-                    <li>نحسب عدد عينات البضاعة: <code>الكمية الكلية ÷ 100</code>.</li>
+                    <li>إذا قل وزن عينة الـ 100 كجم عن 99 كجم: نحدد العجز بطرح الوزن الموزون من <b>الوزن الأساسي للعينة (100 كجم)</b> لضمان حق الاستلام.</li>
                     <li><b>التعويض المستحق</b> = العجز × عدد العينات (ويقرب دائماً لأعلى رقم صحيح)، ويُطرح من الكمية الكلية لحساب <b>الفعلي</b>.</li>
                 </ol>
             </div>
         </div>
 
-        <!-- 7. Casings Module -->
+        <!-- NEW MODULE: FISH -->
+        <div id="fishView" class="module-view">
+            <div class="module-header">
+                <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                <span class="module-title">السمك (المرسي / الحلقة)</span>
+            </div>
+            
+            <div class="segment-control">
+                <button id="segmentFishMorsi" class="segment-btn active" onclick="switchFish('morsi_standard')">المرسي (بوري وبلطي)</button>
+                <button id="segmentFishNormal" class="segment-btn" onclick="switchFish('normal')">الحلقة / أصناف أخرى</button>
+            </div>
+            
+            <div class="info-box" id="fishInfoBox">
+                <b>أسماك المرسي (بوري وبلطي):</b> يتم احتساب وزن استاندر 25 كجم للسبت الصافي. إذا زاد الصافي عن الاستاندر يعتبر تعويضاً، وإذا قل نعتمد الوزن الصافي.
+            </div>
+
+            <div class="form-group">
+                <label>عدد الأسبتة المستلمة</label>
+                <input type="number" id="fishBaskets" oninput="calculateFish()">
+            </div>
+            <div class="form-group">
+                <label>وزن السبت الفارغ (كجم)</label>
+                <input type="number" id="fishEmptyWeight" value="2" oninput="calculateFish()">
+            </div>
+            <div class="form-group">
+                <label>الوزن الإجمالي القائم بالبساكت (كجم)</label>
+                <input type="number" id="fishGrossWeight" oninput="calculateFish()">
+            </div>
+
+            <div class="results-section" id="fishResults" style="display: none;">
+                <h3 class="results-title">النتائج:</h3>
+                <div class="result-box blue">
+                    <div class="result-box-label">الوزن الصافي بعد خصم الفوارغ</div>
+                    <div class="result-box-value" id="fishResNet">0 كجم</div>
+                </div>
+                <div class="result-box green">
+                    <div class="result-box-label">الوزن الفعلي المعتمد للاستلام</div>
+                    <div class="result-box-value" id="fishResActual">0 كجم</div>
+                </div>
+                <div class="result-box orange" id="fishCompBox" style="display: none;">
+                    <div class="result-box-label">التعويض المستحق (زيادة عن الاستاندر)</div>
+                    <div class="result-box-value" id="fishResComp">0 كجم</div>
+                </div>
+            </div>
+            
+            <div class="steps-box" id="fishStepsBox">
+                <h4>💡 طريقة ومراحل الحساب:</h4>
+                <ol>
+                    <li>الوزن الصافي = الوزن الإجمالي - (عدد الأسبتة × وزن السبت الفارغ).</li>
+                    <li>مقارنة الوزن الصافي مع الاستاندر (عدد الأسبتة × 25 كجم).</li>
+                    <li>يتم الاستلام وتحديد التعويض بناءً على نتيجة المقارنة.</li>
+                </ol>
+            </div>
+        </div>
+
         <div id="casingsView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -978,7 +1002,6 @@
                     <div class="result-box-value" id="caseResComp">0</div>
                 </div>
             </div>
-            <!-- Dynamic Steps Box -->
             <div class="steps-box" id="caseStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
@@ -991,7 +1014,6 @@
             </div>
         </div>
 
-        <!-- 8. Expiry Calculator Module -->
         <div id="expiryView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="showHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
@@ -1001,7 +1023,6 @@
             
             <div class="form-group">
                 <label>تاريخ الإنتاج</label>
-                <!-- NEW PREMIUM DATE WIDGET (Day/Month/Year) -->
                 <div class="custom-date-container" id="widget-expProdDate">
                     <div class="date-inputs-row">
                         <input type="number" class="date-day" placeholder="يوم" min="1" max="31" inputmode="numeric" oninput="onWidgetInput('expProdDate')">
@@ -1020,7 +1041,6 @@
 
             <div class="form-group">
                 <label>تاريخ الانتهاء</label>
-                <!-- NEW PREMIUM DATE WIDGET (Day/Month/Year) -->
                 <div class="custom-date-container" id="widget-expEndDate">
                     <div class="date-inputs-row">
                         <input type="number" class="date-day" placeholder="يوم" min="1" max="31" inputmode="numeric" oninput="onWidgetInput('expEndDate')">
@@ -1050,7 +1070,6 @@
                         <div class="result-box-value" id="expResPassed">-</div>
                     </div>
                     
-                    <!-- NEW RESULTS BOX FOR HALF DURATION TRACKING -->
                     <div class="result-box" id="expHalfBox" style="display: none;">
                         <div class="result-box-label" id="expHalfLabel">متابعة نصف مدة الصلاحية</div>
                         <div class="result-box-value" id="expResHalf">-</div>
@@ -1069,25 +1088,51 @@
     <!-- Notification Toast system -->
     <div id="appToast" class="app-toast"></div>
 
-    <!-- Protected dynamic footer designed by Mohamed Tarek & Abdallah Mohamed -->
-    <footer id="devFooter" class="secure-footer">
-        فكرة عبدالله محمد & محمد طارق | <span>تصميم | محمد طارق</span>
-    </footer>
-
     <script>
-        let currentCasingType = 'hank';
-        let currentDryMethod = 'sample'; // Default method for Dry Goods
+        // --- NAVIGATION & HARDWARE BACK BUTTON LOGIC ---
+        // Initialize base history state on load
+        window.addEventListener('load', () => {
+            history.replaceState({ page: 'home' }, null, window.location.pathname);
+        });
 
-        // Block shortcuts like Ctrl+Shift+I, F12, Ctrl+U to prevent simple viewing of code
+        // Intercept device back button / swipe back gesture
+        window.addEventListener('popstate', function(event) {
+            document.querySelectorAll('.module-view').forEach(el => el.style.display = 'none');
+            document.getElementById('homeView').style.display = 'block';
+            document.getElementById('mainHomeBtn').style.display = 'none';
+        });
+
+        function showHome() {
+            // Push history state to keep browser sync without exiting app
+            history.pushState({ page: 'home' }, null, window.location.pathname);
+            document.querySelectorAll('.module-view').forEach(el => el.style.display = 'none');
+            document.getElementById('homeView').style.display = 'block';
+            document.getElementById('mainHomeBtn').style.display = 'none';
+        }
+
+        function openModule(modId) {
+            // Push state for the current module to enable going back
+            history.pushState({ page: modId }, null, "#" + modId);
+            document.getElementById('homeView').style.display = 'none';
+            document.querySelectorAll('.module-view').forEach(el => el.style.display = 'none');
+            document.getElementById(modId + 'View').style.display = 'block';
+            document.getElementById('mainHomeBtn').style.display = 'flex';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+
+        let currentCasingType = 'hank';
+        let currentDryMethod = 'sample'; 
+        let currentFishMethod = 'morsi_standard';
+
         document.onkeydown = function(e) {
-            if (e.keyCode == 123) { return false; } // F12
+            if (e.keyCode == 123) { return false; } 
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; }
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; }
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; }
-            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } // View source
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } 
         }
 
-        // Custom Beautiful Mobile Notification instead of browser alert()
         function showNotification(message) {
             const toast = document.getElementById('appToast');
             toast.innerText = message;
@@ -1097,57 +1142,6 @@
             }, 3000);
         }
 
-        // --- COPYRIGHT GUARDIAN AND TAMPERING DETECTOR ---
-        (function() {
-            // Obfuscated UTF-8 character list for: "تصميم | محمد طارق"
-            const expectedCharCodes = [1578, 1589, 1605, 1610, 1605, 32, 124, 32, 1605, 1581, 1605, 1583, 32, 1591, 1575, 1585, 1602];
-            const authorMark = expectedCharCodes.map(code => String.fromCharCode(code)).join('');
-
-            function auditCopyright() {
-                const footer = document.getElementById('devFooter');
-                if (!footer) {
-                    lockdownSystem();
-                    return;
-                }
-
-                // Check text structure and existence of name
-                if (!footer.innerText.includes(authorMark)) {
-                    lockdownSystem();
-                    return;
-                }
-
-                // Verify stylesheet/hiding hacks
-                const style = window.getComputedStyle(footer);
-                if (
-                    style.display === 'none' || 
-                    style.visibility === 'hidden' || 
-                    parseFloat(style.opacity) < 0.2 || 
-                    parseInt(style.height, 10) === 0 ||
-                    parseInt(style.fontSize, 10) === 0
-                ) {
-                    lockdownSystem();
-                    return;
-                }
-            }
-
-            function lockdownSystem() {
-                document.body.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background-color:#111827; color:#f48120; font-family:system-ui, sans-serif; text-align:center; padding:24px; direction:rtl;">
-                        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-bottom:24px; color:#ef4444;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        <h1 style="font-size:2rem; margin-bottom:12px; font-weight:800;">عذراً، تم إيقاف التطبيق!</h1>
-                        <p style="font-size:1.15rem; color:#cbd5e1; line-height:1.6; max-width:420px; margin-bottom:24px;">تم الكشف عن محاولة تعديل، إخفاء، أو حذف حقوق الملكية الفكرية الخاصة بالمطور. تم تعطيل التطبيق فوراً لحماية حقوق المبرمج الفنية.</p>
-                        <p style="font-size:1.3rem; font-weight:800; color:#ffffff; background:#f48120; padding:12px 28px; border-radius:12px; box-shadow: 0 4px 10px rgba(244,129,32,0.3); border: 2px solid white;">تصميم | محمد طارق</p>
-                    </div>
-                `;
-                throw new Error("نظام الحماية: تم الكشف عن التلاعب بالحقوق الفكرية للمطور محمد طارق.");
-            }
-
-            // Real-time loop protection
-            setInterval(auditCopyright, 1500);
-            window.addEventListener('load', auditCopyright);
-        })();
-
-        // --- NEW CUSTOM PREMIUM DATE PICKER FUNCTIONS ---
         function getWidgetDate(id) {
             const container = document.getElementById('widget-' + id);
             if (!container) return null;
@@ -1163,9 +1157,8 @@
             if (isNaN(dayVal) || isNaN(monthVal) || isNaN(yearVal)) return null;
             if (monthVal < 1 || monthVal > 12) return null;
             if (dayVal < 1 || dayVal > 31) return null;
-            if (yearVal < 1000 || yearVal > 9999) return null; // Wait for full 4 digit year
+            if (yearVal < 1000 || yearVal > 9999) return null;
 
-            // Validate actual calendar constraints (e.g. Feb 31st is invalid)
             const d = new Date(yearVal, monthVal - 1, dayVal);
             if (d.getFullYear() !== yearVal || d.getMonth() !== (monthVal - 1) || d.getDate() !== dayVal) {
                 return null;
@@ -1173,7 +1166,6 @@
             return d;
         }
 
-        // Auto-formatting and focus shifting for fast mobile date entry
         function onWidgetInput(id) {
             const container = document.getElementById('widget-' + id);
             if (!container) return;
@@ -1182,18 +1174,15 @@
             const monthInput = container.querySelector('.date-month');
             const yearInput = container.querySelector('.date-year');
 
-            // Clamp max lengths for mobile speed entry
             if (dayInput.value.length > 2) dayInput.value = dayInput.value.slice(0, 2);
             if (monthInput.value.length > 2) monthInput.value = monthInput.value.slice(0, 2);
             if (yearInput.value.length > 4) yearInput.value = yearInput.value.slice(0, 4);
 
-            // Auto-focus next input (Smart Auto-tabbing)
             if (document.activeElement === dayInput && dayInput.value.length === 2) {
                 monthInput.focus();
             } else if (document.activeElement === monthInput && monthInput.value.length === 2) {
                 yearInput.focus();
             }
-
             triggerCalculation(id);
         }
 
@@ -1202,7 +1191,7 @@
             const container = document.getElementById('widget-' + id);
             if (!container) return;
 
-            const parts = dateValue.split('-'); // Format: YYYY-MM-DD
+            const parts = dateValue.split('-');
             if (parts.length === 3) {
                 container.querySelector('.date-year').value = parts[0];
                 container.querySelector('.date-month').value = parts[1];
@@ -1212,29 +1201,236 @@
         }
 
         function triggerCalculation(id) {
-            if (id === 'roumiProdDate') {
-                calculateRoumi();
-            } else if (id === 'expProdDate' || id === 'expEndDate') {
-                calculateExpiry();
+            if (id === 'roumiProdDate') calculateRoumi();
+            else if (id === 'expProdDate' || id === 'expEndDate') calculateExpiry();
+        }
+
+        // --- 100% CHECKING LIST SYSTEM ---
+
+        function updateDBStatus() {
+            const dbStr = localStorage.getItem('check100DB');
+            const statusEl = document.getElementById('dbStatusIndicator');
+            if(statusEl) {
+                if(!dbStr) {
+                    statusEl.innerHTML = `<div class="alert-banner red">🔴 قاعدة البيانات فارغة تماماً. يرجى رفع الشيت لاستخدام هذه الخاصية!</div>`;
+                } else {
+                    const db = JSON.parse(dbStr);
+                    statusEl.innerHTML = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46;">✅ قاعدة البيانات محملة وجاهزة! (عدد الشركات: ${db.length})</div>`;
+                }
             }
         }
 
-        // Home View Navigation
-        function showHome() {
-            document.querySelectorAll('.module-view').forEach(el => el.style.display = 'none');
-            document.getElementById('homeView').style.display = 'block';
-            document.getElementById('mainHomeBtn').style.display = 'none';
+        function loadDefaultDB() {
+            const dbStr = localStorage.getItem('check100DB');
+            if (dbStr) {
+                updateDBStatus();
+                return;
+            }
+
+            const statusEl = document.getElementById('dbStatusIndicator');
+            if (statusEl) {
+                statusEl.innerHTML = `<div class="alert-banner yellow">⏳ جاري تحميل قاعدة البيانات الأساسية من السيرفر...</div>`;
+            }
+
+            fetch('default_db.xlsx')
+                .then(response => {
+                    if (!response.ok) throw new Error("لم يتم العثور على شيت افتراضي");
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const workbook = XLSX.read(new Uint8Array(data), {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                    
+                    const db = processExcelData(jsonData);
+                    if (db.length > 0) {
+                        localStorage.setItem('check100DB', JSON.stringify(db));
+                        updateDBStatus();
+                    } else {
+                        throw new Error("الشيت فارغ أو غير صالح");
+                    }
+                })
+                .catch(error => {
+                    console.log("No default DB:", error);
+                    updateDBStatus(); 
+                });
         }
 
-        function openModule(modId) {
-            document.getElementById('homeView').style.display = 'none';
-            document.querySelectorAll('.module-view').forEach(el => el.style.display = 'none');
-            document.getElementById(modId + 'View').style.display = 'block';
-            document.getElementById('mainHomeBtn').style.display = 'flex';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        function processExcelData(data) {
+            let db = [];
+            let currentCompany = null;
+
+            for (let i = 0; i < data.length; i++) {
+                let row = data[i];
+                if (!row || row.length === 0) continue;
+
+                let rowText = row.map(cell => String(cell || "").trim()).join(" ");
+                if (!rowText) continue;
+
+                if (rowText.includes("التكرار") || rowText.includes("المورد") || 
+                    rowText.includes("إجمالي") || rowText.includes("Total") || rowText.includes("الاجمالى")) {
+                    continue;
+                }
+
+                const getCount = (r) => {
+                    for (let j = r.length - 1; j >= 0; j--) {
+                        if (r[j] !== undefined && r[j] !== null && String(r[j]).trim() !== "") {
+                            let strVal = String(r[j]).trim().replace(/,/g, ''); 
+                            if (!isNaN(strVal) && strVal !== "") return parseInt(strVal);
+                        }
+                    }
+                    return 0;
+                };
+
+                let count = getCount(row);
+                let firstCell = String(row[0] || "").trim();
+                let secondCell = String(row[1] || "").trim();
+
+                let isCompany = false;
+                let code = "";
+                let name = firstCell;
+
+                let matchStart = firstCell.match(/^\s*(\d+)\s*[-_]\s*(.+)$/);
+                let matchEnd = firstCell.match(/^(.+)\s*[-_]\s*(\d+)\s*$/);
+
+                if (matchStart) {
+                    isCompany = true; code = matchStart[1]; name = matchStart[2];
+                } else if (matchEnd) {
+                    isCompany = true; name = matchEnd[1]; code = matchEnd[2];
+                }
+
+                if (isCompany) {
+                    currentCompany = {
+                        code: code,
+                        name: name,
+                        originalStr: firstCell,
+                        totalCount: count,
+                        violations: []
+                    };
+                    db.push(currentCompany);
+
+                    if (secondCell && isNaN(parseInt(secondCell))) {
+                        let vCount = getCount(row.slice(1)) || count;
+                        currentCompany.violations.push({ type: secondCell, count: vCount });
+                    }
+                } else {
+                    if (currentCompany) {
+                        let vType = "";
+                        let vCount = count;
+
+                        if (firstCell && isNaN(parseInt(firstCell))) {
+                            vType = firstCell;
+                        } else if (!firstCell && secondCell && isNaN(parseInt(secondCell))) {
+                            vType = secondCell;
+                        } else {
+                            let possibleText = row.find(c => c && isNaN(parseInt(String(c).trim())));
+                            if (possibleText) vType = String(possibleText).trim();
+                        }
+
+                        if (vType && !vType.includes("إجمالي") && !vType.includes("Total")) {
+                            currentCompany.violations.push({ type: vType, count: vCount });
+                        }
+                    }
+                }
+            }
+            return db;
         }
 
-        // Generic dynamic weight sample management
+        function handleExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                    const db = processExcelData(jsonData);
+
+                    if (db.length === 0) {
+                        showNotification("لم يتم العثور على بيانات صالحة! تأكد من شكل الشيت.");
+                        return;
+                    }
+
+                    localStorage.setItem('check100DB', JSON.stringify(db));
+                    updateDBStatus();
+                    showNotification(`تم الحفظ بنجاح! تم استخراج ${db.length} شركة بدقة.`);
+
+                    event.target.value = '';
+                    searchCompany();
+
+                } catch (err) {
+                    console.error(err);
+                    showNotification("حدث خطأ أثناء قراءة الملف، تأكد من أنه بصيغة Excel صالحة.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function searchCompany() {
+            const input = document.getElementById('companySearchInput').value.trim().toLowerCase();
+            const resultsSec = document.getElementById('checkResults');
+            const contentDiv = document.getElementById('checkResultContent');
+
+            if (input.length === 0) {
+                resultsSec.style.display = 'none';
+                return;
+            }
+
+            const dbStr = localStorage.getItem('check100DB');
+            if (!dbStr) {
+                contentDiv.innerHTML = `<div class="alert-banner red">يرجى رفع الشيت أولاً لتهيئة قاعدة البيانات!</div>`;
+                resultsSec.style.display = 'block';
+                return;
+            }
+
+            const db = JSON.parse(dbStr);
+            const matches = db.filter(c => c.name.toLowerCase().includes(input) || c.code.includes(input) || c.originalStr.toLowerCase().includes(input));
+
+            if (matches.length > 0) {
+                let html = '';
+                matches.forEach(m => {
+                    let violationsHtml = '';
+                    if (m.violations && m.violations.length > 0) {
+                        violationsHtml = `
+                            <ul style="margin-top: 6px; padding-right: 20px; font-size: 0.9rem; color: #450a0a;">
+                                ${m.violations.map(v => `<li style="margin-bottom: 4px;">${v.type} <strong style="color:#ef4444; font-size:0.85rem;">(${v.count} مرة)</strong></li>`).join('')}
+                            </ul>
+                        `;
+                    } else {
+                        violationsHtml = `<div style="margin-top: 6px; font-size: 0.85rem; color: #7f1d1d; font-style: italic;">(لم يتم العثور على تفاصيل المخالفات، يرجى عمل Expand للصفوف في الشيت قبل رفعه)</div>`;
+                    }
+
+                    html += `
+                        <div class="result-box red" style="margin-bottom: 12px; border-width: 2px;">
+                            <div class="result-box-label" style="color: #991b1b; font-size:1rem;">⚠️ احذر! الشركة في قائمة التشييك 100%</div>
+                            <div class="result-box-value" style="font-size: 1.2rem; margin-top: 6px;">${m.name} <span style="color:#ef4444; font-size:1rem;">(كود: ${m.code || 'غير محدد'})</span></div>
+                            <div style="margin-top: 8px; border-top: 1px solid #fca5a5; padding-top: 8px;">
+                                <div style="font-weight: bold; font-size: 0.95rem; color: #7f1d1d;">إجمالي التكرار: ${m.totalCount} مرة</div>
+                                ${violationsHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+                contentDiv.innerHTML = html;
+            } else {
+                contentDiv.innerHTML = `
+                    <div class="result-box green" style="border-width: 2px;">
+                        <div class="result-box-label">الشركة ممتازة</div>
+                        <div class="result-box-value" style="font-size: 1.2rem;">ليست في قائمة الـ 100% 🟢</div>
+                    </div>
+                `;
+            }
+            resultsSec.style.display = 'block';
+        }
+
+        window.addEventListener('DOMContentLoaded', loadDefaultDB);
+
         function addSampleField(prefix) {
             const list = document.getElementById(prefix + 'SamplesList');
             const count = list.querySelectorAll('input').length;
@@ -1261,7 +1457,7 @@
                 box.innerHTML = `
                     <h4>💡 طريقة ومراحل الحساب:</h4>
                     <ol>
-                        <li>يتم تصفية العينات المختارة في المعمل للحصول على أوزان تصفية صافية.</li>
+                        <li>يتم تصفية العينات المختارة في المعمل (طرح وزن السرفيس من القائم) للحصول على أوزان تصفية صافية.</li>
                         <li>نجمع أوزان التصفية ونقسمها على عددها للحصول على <b>متوسط التصفية الصافي</b>.</li>
                         <li><code>الكمية الفعلي</code> = متوسط التصفية الصافي × الكمية الكلية.</li>
                         <li><b>شرط الاستاندر:</b> إذا تم تحديد وزن معياري (استاندر) وكان المتوسط أكبر منه، يتم اعتماد الاستاندر كوزن فعلي للاستلام، ويُحسب الفارق كـ <b>تعويض</b> للشركة.</li>
@@ -1438,27 +1634,25 @@
                     <ol>
                         <li>نأخذ عينة اختبار وزنها الإجمالي 100 كيلو من البضاعة الموردة بالكامل ونقوم بوزنها بدقة.</li>
                         <li>تُعطى نسبة سماح حتى 1 كجم، بحيث يكون الحد الأدنى المقبول للاستلام الآمن هو 99 كجم.</li>
-                        <li>إذا قل وزن عينة الـ 100 كجم عن 99 كجم: نحدد <b>العجز</b> بطرح الوزن الموزون من 99.</li>
-                        <li>نحسب عدد عينات البضاعة: <code>الكمية الكلية ÷ 100</code>.</li>
+                        <li>إذا قل وزن عينة الـ 100 كجم عن 99 كجم: نحدد العجز بطرح الوزن الموزون من <b>الوزن الأساسي للعينة (100 كجم)</b> لضمان حق الاستلام.</li>
                         <li><b>التعويض المستحق</b> = العجز × عدد العينات (ويقرب دائماً لأعلى رقم صحيح)، ويُطرح من الكمية الكلية لحساب <b>الفعلي</b>.</li>
                     </ol>
                 `;
                 return;
             }
 
-            // Check if sample weight is valid (Sample Method)
             if (!isNaN(sampleW) && sampleW > 0) {
                 let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل (طريقة عينة الـ 100 كجم):</h4><ol>`;
                 html += `<li><b>تقييم عينة الـ 100 كجم الموزونة:</b><br>
                         الوزن الفعلي للعينة = <b><code>${sampleW.toFixed(3)}</code> كجم</b>.</li>`;
 
                 if (isDeficit) {
-                    const deficit = 99 - sampleW;
+                    const deficit = 100 - sampleW;
                     const numSamples = totalQty / 100;
                     const rawComp = deficit * numSamples;
                     html += `<li><b>حساب قيمة العجز المكتشف:</b><br>
-                            بما أن العينة المسحوبة أقل من الحد المسموح للاستلام الآمن (99 كجم):<br>
-                            العجز لكل 100 كجم بضاعة = <code>99</code> كجم - <code>${sampleW.toFixed(3)}</code> كجم = <b><code>${deficit.toFixed(3)}</code> كجم عجز</b>.</li>`;
+                            بما أن العينة المسحوبة أقل من الحد المسموح للاستلام الآمن (99 كجم)، يتم حساب العجز من الوزن الأساسي (100 كجم):<br>
+                            العجز لكل 100 كجم بضاعة = <code>100</code> كجم - <code>${sampleW.toFixed(3)}</code> كجم = <b><code>${deficit.toFixed(3)}</code> كجم عجز</b>.</li>`;
                     
                     html += `<li><b>حساب إجمالي التعويض المستقطع لكامل البضاعة:</b><br>
                             1. عدد عينات الـ 100 كجم في الشحنة = إجمالي الكمية (<code>${totalQty.toFixed(1)}</code> كجم) ÷ 100 = <code>${numSamples.toFixed(2)}</code> عينة.<br>
@@ -1477,7 +1671,6 @@
                 html += `</ol>`;
                 box.innerHTML = html;
             } 
-            // Else, if total actual weight is valid (Total Weight Method)
             else if (!isNaN(totalActualW) && totalActualW > 0) {
                 let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل (طريقة وزن الشحنة بالكامل):</h4><ol>`;
                 html += `<li><b>حساب الحد الأدنى المقبول للوزن (نسبة سماح 1%):</b><br>
@@ -1486,10 +1679,10 @@
                         الوزن الفعلي المستلم للشحنة = <b><code>${totalActualW.toFixed(3)}</code> كجم</b>.</li>`;
 
                 if (isDeficit) {
-                    const deficit = allowableW - totalActualW;
+                    const deficit = totalQty - totalActualW;
                     html += `<li><b>حساب قيمة العجز المكتشف:</b><br>
-                            بما أن الوزن الفعلي (<code>${totalActualW.toFixed(3)}</code> كجم) أقل من الحد المقبول (<code>${allowableW.toFixed(3)}</code> كجم):<br>
-                            إجمالي العجز = <code>${allowableW.toFixed(3)}</code> كجم - <code>${totalActualW.toFixed(3)}</code> كجم = <b><code>${deficit.toFixed(3)}</code> كجم عجز</b>.</li>`;
+                            بما أن الوزن الفعلي (<code>${totalActualW.toFixed(3)}</code> كجم) أقل من الحد المقبول (<code>${allowableW.toFixed(3)}</code> كجم)، يتم حساب العجز من إجمالي الكمية المطلوبة:<br>
+                            إجمالي العجز = <code>${totalQty.toFixed(1)}</code> كجم - <code>${totalActualW.toFixed(3)}</code> كجم = <b><code>${deficit.toFixed(3)}</code> كجم عجز</b>.</li>`;
                     html += `<li><b>تطبيق شرط التقريب الإداري لأعلى رقم صحيح:</b><br>
                             التعويض المطلوب خصمه = <b><code>${comp}</code> كجم تعويض</b>.</li>`;
                     html += `<li><b>حساب الكمية الفعلي النهائي المعتمد للاستلام:</b><br>
@@ -1505,7 +1698,6 @@
                 box.innerHTML = html;
             } 
             else {
-                // General fallback when weights are not typed yet
                 box.innerHTML = `
                     <h4>💡 طريقة ومراحل الحساب للكميات:</h4>
                     <ol>
@@ -1515,6 +1707,48 @@
                     </ol>
                 `;
             }
+        }
+
+        // --- NEW FISH STEPS LOGIC ---
+        function updateFishSteps(method, baskets, emptyW, grossW, netW, actual, comp) {
+            const box = document.getElementById('fishStepsBox');
+            if (isNaN(baskets) || isNaN(emptyW) || isNaN(grossW) || baskets <= 0 || grossW <= 0) {
+                box.innerHTML = `
+                    <h4>💡 طريقة ومراحل الحساب:</h4>
+                    <ol>
+                        <li>الوزن الصافي = الوزن الإجمالي - (عدد الأسبتة × وزن السبت الفارغ).</li>
+                        <li>${method === 'morsi_standard' ? 'مقارنة الوزن الصافي مع الاستاندر (عدد الأسبتة × 25 كجم).' : 'يتم اعتماد الوزن الصافي كوزن فعلي للاستلام مباشرة.'}</li>
+                        <li>${method === 'morsi_standard' ? 'إذا زاد الصافي عن الاستاندر، يتم الاستلام على الاستاندر والزيادة تعتبر تعويضاً.' : ''}</li>
+                    </ol>
+                `;
+                return;
+            }
+
+            let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل:</h4><ol>`;
+            const totalEmpty = baskets * emptyW;
+            html += `<li><b>حساب إجمالي الفوارغ:</b><br>وزن الأسبتة الفارغة = <code>${baskets}</code> سبت × <code>${emptyW}</code> كجم = <b><code>${totalEmpty.toFixed(3)}</code> كجم</b>.</li>`;
+            html += `<li><b>حساب الوزن الصافي للسمك:</b><br>الصافي = الوزن الإجمالي (<code>${grossW.toFixed(3)}</code>) - وزن الفوارغ (<code>${totalEmpty.toFixed(3)}</code>) = <b><code>${netW.toFixed(3)}</code> كجم</b>.</li>`;
+
+            if (method === 'morsi_standard') {
+                const standardTotal = baskets * 25;
+                html += `<li><b>مقارنة الوزن الصافي بالاستاندر (للبوري والبلطي):</b><br>
+                        الوزن الاستاندر المسموح = <code>${baskets}</code> سبت × 25 كجم = <b><code>${standardTotal.toFixed(3)}</code> كجم</b>.</li>`;
+                
+                if (netW > standardTotal) {
+                    html += `<li>بما أن الصافي (<code>${netW.toFixed(3)}</code>) <b>أكبر</b> من الاستاندر (<code>${standardTotal.toFixed(3)}</code>):<br>
+                            1. يتم الاستلام على الاستاندر كوزن فعلي = <b><code>${actual.toFixed(3)}</code> كجم</b>.<br>
+                            2. يُحسب التعويض للزيادة = <code>${netW.toFixed(3)}</code> - <code>${standardTotal.toFixed(3)}</code> = <b><code>${comp.toFixed(3)}</code> كجم تعويض</b>.</li>`;
+                } else {
+                    html += `<li>بما أن الصافي (<code>${netW.toFixed(3)}</code>) <b>أقل من أو يساوي</b> الاستاندر (<code>${standardTotal.toFixed(3)}</code>):<br>
+                            يتم اعتماد الوزن الصافي كوزن فعلي للاستلام = <b><code>${actual.toFixed(3)}</code> كجم</b> (ولا يوجد تعويض).</li>`;
+                }
+            } else {
+                html += `<li><b>الاستلام (أصناف الحلقة):</b><br>
+                        بما أنه لا يوجد وزن استاندر لهذه الأصناف، يتم اعتماد الوزن الصافي كوزن فعلي للاستلام مباشرة:<br>
+                        الوزن الفعلي النهائي = <b><code>${actual.toFixed(3)}</code> كجم</b>.</li>`;
+            }
+            html += `</ol>`;
+            box.innerHTML = html;
         }
 
         function updateCasingsSteps(totalQty, value, standard, actual, comp, isDeficit) {
@@ -1552,13 +1786,13 @@
                         2.  تطبيق قاعدة التقريب الإداري المعتمد لأعلى حبة صحيحة دائماً = <b><code>${comp}</code> حبة تعويض خصم</b>.</li>`;
                 
                 html += `<li><b>حساب العدد الفعلي النهائي المعتمد للاستلام:</b><br>
-                        <code>العدد الفعلي المعتمد</code> = الكمية الكلية (<code>${totalQty}</code> حبة) - حبات التعويض (<code>${comp}</code> حبة)<br>
+                        <code>الالعدد الفعلي المعتمد</code> = الكمية الكلية (<code>${totalQty}</code> حبة) - حبات التعويض (<code>${comp}</code> حبة)<br>
                         <code>العدد الفعلي النهائي المعتمد</code> = <b><code>${actual}</code> حبة</b>.</li>`;
             } else {
                 html += `<li><b>تقييم القبول والاستلام للشحنة:</b><br>
                         بما أن نتيجة العينة (<code>${value.toFixed(1)}</code> ${unit}) مطابقة أو تزيد عن الاستاندر (<code>${standard}</code> ${unit}):<br>
                         تستلم البضاعة بالكامل بدون أي خصم لحبات التعويض:<br>
-                        <code>العدد الفعلي النهائي المعتمد</code> = <b><code>${actual}</code> حبة</b>.</li>`;
+                        <code>الالعدد الفعلي النهائي المعتمد</code> = <b><code>${actual}</code> حبة</b>.</li>`;
             }
             html += `</ol>`;
             box.innerHTML = html;
@@ -1566,7 +1800,6 @@
 
         // --- CALCULATORS LOGIC ---
 
-        // 1. Natural Cheese Calculations
         function calculateNatural() {
             const totalQty = parseFloat(document.getElementById('natTotalQty').value);
             const standard = parseFloat(document.getElementById('natStandard').value);
@@ -1599,11 +1832,9 @@
             document.getElementById('natResComp').innerText = comp.toFixed(3) + ' كجم';
             resultsSec.style.display = 'block';
 
-            // Update Dynamic Steps
             updateNaturalSteps(totalQty, avg, standard, actual, comp);
         }
 
-        // 2. Processed Cheese Calculations
         function calculateProcessed() {
             const totalQty = parseFloat(document.getElementById('procTotalQty').value);
             const standard = parseFloat(document.getElementById('procStandard').value);
@@ -1638,21 +1869,18 @@
             document.getElementById('procResComp').innerText = comp.toFixed(3) + ' كجم';
             resultsSec.style.display = 'block';
 
-            // Update Dynamic Steps
             updateProcessedSteps(totalQty, min, avg, standard, actual, comp);
         }
 
-        // Quarter Threshold Evaluator
         function getQuarterDays(total) {
-            if (total >= 1050) return 90; // 3 سنوات
-            if (total >= 700) return 45; // سنتين
-            if (total >= 350) return 30; // سنة
-            if (total >= 85) return 15; // 3 لـ 9 شهور
-            if (total >= 28) return 7; // شهر لشهرين
-            return 3; // 14 يوم أو أقل
+            if (total >= 1050) return 90; 
+            if (total >= 700) return 45; 
+            if (total >= 350) return 30; 
+            if (total >= 85) return 15; 
+            if (total >= 28) return 7; 
+            return 3; 
         }
 
-        // 3. Roumi Cheese Calculations (No Steps box as it is pure Date check)
         function calculateRoumi() {
             const prodDate = getWidgetDate('roumiProdDate');
             const resultsSec = document.getElementById('roumiResults');
@@ -1667,7 +1895,7 @@
             const diffTime = today - prodDate;
             const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
             
-            const maxDays = 540; // 18 شهرا
+            const maxDays = 540; 
             const remaining = maxDays - diffDays;
 
             let cName = "-";
@@ -1705,7 +1933,6 @@
             resultsSec.style.display = 'block';
         }
 
-        // 4. Pastrami Calculations
         function calculatePastrami() {
             const totalQty = parseFloat(document.getElementById('pastTotalQty').value);
             const gross = parseFloat(document.getElementById('pastGrossWeight').value);
@@ -1741,11 +1968,9 @@
             document.getElementById('pastResBonus').innerText = bonus.toFixed(3) + ' كجم';
             resultsSec.style.display = 'block';
 
-            // Update Dynamic Steps
             updatePastramiSteps(totalQty, gross, garlic, ratio, actual, bonus, isExcess);
         }
 
-        // 5. Luncheon Calculations
         function calculateLuncheon() {
             const pieces = parseFloat(document.getElementById('lunchPieces').value);
             const avgW = parseFloat(document.getElementById('lunchAvgWeight').value);
@@ -1784,11 +2009,9 @@
             document.getElementById('lunchResBonus').innerText = bonus.toFixed(3) + ' كجم';
             resultsSec.style.display = 'block';
 
-            // Update Dynamic Steps
             updateLuncheonSteps(pieces, avgW, totalWeight, actual, bonus, scenario);
         }
 
-        // 6. Dry Goods Calculations (UPDATED to allow both methods for >= 100 kg)
         function switchDryMethod(method) {
             currentDryMethod = method;
             document.getElementById('segmentDrySample').classList.toggle('active', method === 'sample');
@@ -1796,7 +2019,6 @@
             calculateDry();
         }
 
-        // 6. Dry Goods Calculations
         function calculateDry() {
             const totalQty = parseFloat(document.getElementById('dryTotalQty').value);
             const resultsSec = document.getElementById('dryResults');
@@ -1815,11 +2037,9 @@
             let isDeficit = false;
 
             if (totalQty >= 100) {
-                // Show the method selector segment control
                 document.getElementById('dryMethodSegment').style.display = 'flex';
 
                 if (currentDryMethod === 'sample') {
-                    // Method A: Sample of 100 kg
                     document.getElementById('drySample100Group').style.display = 'block';
                     document.getElementById('dryTotalActualGroup').style.display = 'none';
 
@@ -1833,7 +2053,7 @@
                     isDeficit = sampleW < 99;
                     if (isDeficit) {
                         const numSamples = totalQty / 100;
-                        const deficit = 99 - sampleW;
+                        const deficit = 100 - sampleW; 
                         comp = Math.ceil(deficit * numSamples);
                         actual = totalQty - comp;
                         document.getElementById('dryCompBox').style.display = 'block';
@@ -1845,10 +2065,8 @@
                     document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
                     resultsSec.style.display = 'block';
 
-                    // Update steps
                     updateDrySteps(totalQty, sampleW, actual, comp, isDeficit, NaN, NaN);
                 } else {
-                    // Method B: Full weight for >= 100 kg
                     document.getElementById('drySample100Group').style.display = 'none';
                     document.getElementById('dryTotalActualGroup').style.display = 'block';
 
@@ -1859,13 +2077,12 @@
                         return;
                     }
 
-                    // 1% allowance on total quantity (e.g. 140kg total qty * 0.99 = 138.6kg allowable limit)
                     const allowableW = totalQty * 0.99;
                     isDeficit = totalActualW < allowableW;
 
                     if (isDeficit) {
-                        const deficit = allowableW - totalActualW;
-                        comp = Math.ceil(deficit); // Round up to nearest integer
+                        const deficit = totalQty - totalActualW; 
+                        comp = Math.ceil(deficit); 
                         actual = totalQty - comp;
                         document.getElementById('dryCompBox').style.display = 'block';
                     } else {
@@ -1876,11 +2093,9 @@
                     document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
                     resultsSec.style.display = 'block';
 
-                    // Update steps
                     updateDrySteps(totalQty, NaN, actual, comp, isDeficit, totalActualW, allowableW);
                 }
             } else {
-                // For quantities less than 100 kg, force full weight check and hide segment
                 document.getElementById('dryMethodSegment').style.display = 'none';
                 document.getElementById('drySample100Group').style.display = 'none';
                 document.getElementById('dryTotalActualGroup').style.display = 'block';
@@ -1896,8 +2111,8 @@
                 isDeficit = totalActualW < allowableW;
 
                 if (isDeficit) {
-                    const deficit = allowableW - totalActualW;
-                    comp = Math.ceil(deficit); // Round up to nearest integer
+                    const deficit = totalQty - totalActualW; 
+                    comp = Math.ceil(deficit); 
                     actual = totalQty - comp;
                     document.getElementById('dryCompBox').style.display = 'block';
                 } else {
@@ -1908,12 +2123,63 @@
                 document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
                 resultsSec.style.display = 'block';
 
-                // Update steps
                 updateDrySteps(totalQty, NaN, actual, comp, isDeficit, totalActualW, allowableW);
             }
         }
 
-        // 7. Casings Switcher
+        // --- FISH MODULE LOGIC ---
+        function switchFish(method) {
+            currentFishMethod = method;
+            document.getElementById('segmentFishMorsi').classList.toggle('active', method === 'morsi_standard');
+            document.getElementById('segmentFishNormal').classList.toggle('active', method === 'normal');
+            
+            if(method === 'morsi_standard') {
+                document.getElementById('fishInfoBox').innerHTML = '<b>أسماك المرسي (بوري وبلطي):</b> يتم احتساب وزن استاندر 25 كجم للسبت الصافي. إذا زاد الصافي عن الاستاندر يعتبر تعويضاً، وإذا قل نعتمد الوزن الصافي.';
+            } else {
+                document.getElementById('fishInfoBox').innerHTML = '<b>أسماك الحلقة والأصناف الأخرى:</b> لا يوجد وزن استاندر. يتم خصم وزن الأسبتة الفارغة فقط واعتماد الوزن الصافي كوزن فعلي.';
+            }
+            calculateFish();
+        }
+
+        function calculateFish() {
+            const baskets = parseFloat(document.getElementById('fishBaskets').value);
+            const emptyW = parseFloat(document.getElementById('fishEmptyWeight').value);
+            const grossW = parseFloat(document.getElementById('fishGrossWeight').value);
+            const resultsSec = document.getElementById('fishResults');
+
+            if (isNaN(baskets) || isNaN(emptyW) || isNaN(grossW) || baskets <= 0 || grossW <= 0) {
+                resultsSec.style.display = 'none';
+                updateFishSteps(currentFishMethod, NaN, NaN, NaN, NaN, NaN, NaN);
+                return;
+            }
+
+            const totalEmpty = baskets * emptyW;
+            const netW = grossW - totalEmpty;
+            
+            let actual = netW;
+            let comp = 0;
+
+            if (currentFishMethod === 'morsi_standard') {
+                const maxStandard = baskets * 25;
+                if (netW > maxStandard) {
+                    actual = maxStandard;
+                    comp = netW - maxStandard;
+                    document.getElementById('fishCompBox').style.display = 'block';
+                } else {
+                    document.getElementById('fishCompBox').style.display = 'none';
+                }
+            } else {
+                document.getElementById('fishCompBox').style.display = 'none';
+            }
+
+            document.getElementById('fishResNet').innerText = netW.toFixed(3) + ' كجم';
+            document.getElementById('fishResActual').innerText = actual.toFixed(3) + ' كجم';
+            document.getElementById('fishResComp').innerText = comp.toFixed(3) + ' كجم';
+            
+            resultsSec.style.display = 'block';
+            updateFishSteps(currentFishMethod, baskets, emptyW, grossW, netW, actual, comp);
+        }
+
         function switchCasings(type) {
             currentCasingType = type;
             document.getElementById('segmentHank').classList.toggle('active', type === 'hank');
@@ -1957,11 +2223,9 @@
             document.getElementById('caseResComp').innerText = comp;
             resultsSec.style.display = 'block';
 
-            // Update Dynamic Steps
             updateCasingsSteps(totalQty, value, standard, actual, comp, isDeficit);
         }
 
-        // 8. General Expiry Calculator
         function calculateExpiry() {
             const prodDate = getWidgetDate('expProdDate');
             const endDate = getWidgetDate('expEndDate');
@@ -1989,7 +2253,6 @@
             today.setHours(0,0,0,0);
 
             const totalDays = Math.round((endDate - prodDate) / (1000 * 60 * 60 * 24));
-            // Fixed the "SyntaxError: Invalid left-hand side in assignment" here
             const passedDays = Math.max(0, Math.round((today - prodDate) / (1000 * 60 * 60 * 24)));
             const remainingDays = totalDays - passedDays;
 
@@ -2014,7 +2277,6 @@
             document.getElementById('expResTotal').innerText = formatDuration(totalDays);
             document.getElementById('expResPassed').innerText = formatDuration(passedDays);
             
-            // --- NEW REVOLUTIONARY HALF-LIFE TRACKING LOGIC ---
             const halfDays = totalDays / 2;
             const halfBox = document.getElementById('expHalfBox');
             const halfLabelEl = document.getElementById('expHalfLabel');
@@ -2022,17 +2284,15 @@
 
             if (halfBox && halfLabelEl && halfValueEl) {
                 if (passedDays < halfDays) {
-                    // Today is BEFORE half-life
                     const daysToHalf = Math.round(halfDays - passedDays);
                     halfLabelEl.innerText = "الوقت المتبقي للوصول لنصف مدة الصلاحية";
                     halfValueEl.innerText = formatDuration(daysToHalf);
-                    halfBox.className = "result-box blue"; // Clean premium blue
+                    halfBox.className = "result-box blue"; 
                 } else {
-                    // Today is AFTER half-life
                     const daysPastHalf = Math.round(passedDays - halfDays);
                     halfLabelEl.innerText = "الوقت المنقضي بعد نصف مدة الصلاحية";
                     halfValueEl.innerText = formatDuration(daysPastHalf);
-                    halfBox.className = "result-box orange"; // Attention grabbing orange
+                    halfBox.className = "result-box orange"; 
                 }
                 halfBox.style.display = 'block';
             }
@@ -2043,7 +2303,7 @@
             if (isExpired) {
                 remVal.innerText = "منتهي الصلاحية";
                 remBox.className = "result-box red";
-                if (halfBox) halfBox.style.display = 'none'; // Hide if completely expired
+                if (halfBox) halfBox.style.display = 'none'; 
             } else {
                 remVal.innerText = formatDuration(remainingDays);
                 remBox.className = "result-box green";
@@ -2065,7 +2325,6 @@
             resultsSec.style.display = 'block';
         }
 
-        // تسجيل الحارس السري الأوفلاين للعمل بدون شبكة
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
