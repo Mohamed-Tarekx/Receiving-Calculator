@@ -1,6 +1,6 @@
 {
-  "name": "إدارة الإستلام - فتح الله ماركت",
-  "short_name": "حاسبة الإستلام",
+  "name": "حاسبة الاستلام - فتح الله ماركت",
+  "short_name": "حاسبة الاستلام",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#111827",
@@ -19,3 +19,4 @@
     }
   ]
 }
+```
