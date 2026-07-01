@@ -1,10 +1,12 @@
-const CACHE_NAME = 'fathalla-receiving-v10';
+const CACHE_NAME = 'fathalla-receiving-v17-final';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './sw.js',
-  './logo.png'
+  './logo.png',
+  './default_db.xlsx',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
 
 // التثبيت المبدئي للملفات في كاش الذاكرة التابع للموبايل
