@@ -1,11 +1,10 @@
-const CACHE_NAME = 'fathalla-receiving-v17-final';
+const CACHE_NAME = 'fathalla-receiving-v19-final';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './sw.js',
   './logo.png',
-  './default_db.xlsx',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
 
