@@ -1848,4 +1848,277 @@
                     html += `<li><b>تطبيق شرط التقريب الإداري لأعلى رقم صحيح:</b><br>التعويض المطلوب خصمه = <b><code>${comp}</code> كجم تعويض</b>.</li>`;
                     html += `<li><b>حساب الكمية الفعلي النهائي المعتمد:</b><br><code>الفعلي المعتمد</code> = <code>${totalQty.toFixed(1)}</code> - <code>${comp}</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
                 } else {
-                    html += `<li><b>تقييم العجز والقبول:</b><br>بما أن الوزن الفعلي (<code>${totalActualW.toFixed(3)}</code> كجم) أكبر من أو يساوي الحد المقبول (<b><code>${allowableW.toFixed(3)}</code> كجم</b>):<br>تستلم الشحنة كاملة فوراً وبدون استقطاعات:<br><code>
+                    html += `<li><b>تقييم العجز والقبول:</b><br>بما أن الوزن الفعلي (<code>${totalActualW.toFixed(3)}</code> كجم) أكبر من أو يساوي الحد المقبول (<b><code>${allowableW.toFixed(3)}</code> كجم</b>):<br>تستلم الشحنة كاملة فوراً وبدون استقطاعات:<br><code>الفعلي المعتمد</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
+                }
+                html += `</ol>`;
+                box.innerHTML = html;
+            } else {
+                box.innerHTML = `<h4>💡 طريقة ومراحل الحساب للكميات:</h4><ol><li>الكمية الكلية المستلمة: <code>${totalQty.toFixed(1)}</code> كجم.</li><li>طريقة الحساب الحالية: <b>${currentDryMethod === 'sample' ? 'عينة الـ 100 كجم بنسبة سماح 1 كجم' : 'وزن الشحنة بالكامل بنسبة سماح 1%'}</b>.</li><li>يرجى إدخال الوزن المطلوب لعرض خطوات الحساب التفصيلية بالأرقام.</li></ol>`;
+            }
+        }
+
+        function calculateDry() {
+            const totalQty = parseFloat(document.getElementById('dryTotalQty').value);
+            const resultsSec = document.getElementById('dryResults');
+            if (isNaN(totalQty) || totalQty <= 0) {
+                resultsSec.style.display = 'none';
+                document.getElementById('dryMethodSegment').style.display = 'none';
+                document.getElementById('drySample100Group').style.display = 'block';
+                document.getElementById('dryTotalActualGroup').style.display = 'none';
+                updateDrySteps(NaN, NaN, NaN, NaN, false, NaN, NaN);
+                return;
+            }
+            let actual = totalQty;
+            let comp = 0;
+            let isDeficit = false;
+            if (totalQty >= 100) {
+                document.getElementById('dryMethodSegment').style.display = 'flex';
+                if (currentDryMethod === 'sample') {
+                    document.getElementById('drySample100Group').style.display = 'block';
+                    document.getElementById('dryTotalActualGroup').style.display = 'none';
+                    const sampleW = parseFloat(document.getElementById('drySampleWeight').value);
+                    if (isNaN(sampleW) || sampleW <= 0) {
+                        resultsSec.style.display = 'none';
+                        updateDrySteps(totalQty, NaN, NaN, NaN, false, NaN, NaN);
+                        return;
+                    }
+                    isDeficit = sampleW < 99;
+                    if (isDeficit) {
+                        const numSamples = totalQty / 100;
+                        const deficit = 100 - sampleW;
+                        comp = Math.ceil(deficit * numSamples);
+                        actual = totalQty - comp;
+                        document.getElementById('dryCompBox').style.display = 'block';
+                    } else {
+                        document.getElementById('dryCompBox').style.display = 'none';
+                    }
+                    document.getElementById('dryResActual').innerText = actual.toFixed(1) + ' كجم';
+                    document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
+                    resultsSec.style.display = 'block';
+                    updateDrySteps(totalQty, sampleW, actual, comp, isDeficit, NaN, NaN);
+                } else {
+                    document.getElementById('drySample100Group').style.display = 'none';
+                    document.getElementById('dryTotalActualGroup').style.display = 'block';
+                    const totalActualW = parseFloat(document.getElementById('dryTotalActualWeight').value);
+                    if (isNaN(totalActualW) || totalActualW <= 0) {
+                        resultsSec.style.display = 'none';
+                        updateDrySteps(totalQty, NaN, NaN, NaN, false, NaN, NaN);
+                        return;
+                    }
+                    const allowableW = totalQty * 0.99;
+                    isDeficit = totalActualW < allowableW;
+                    if (isDeficit) {
+                        const deficit = totalQty - totalActualW; 
+                        comp = Math.ceil(deficit); 
+                        actual = totalQty - comp;
+                        document.getElementById('dryCompBox').style.display = 'block';
+                    } else {
+                        document.getElementById('dryCompBox').style.display = 'none';
+                    }
+                    document.getElementById('dryResActual').innerText = actual.toFixed(1) + ' كجم';
+                    document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
+                    resultsSec.style.display = 'block';
+                    updateDrySteps(totalQty, NaN, actual, comp, isDeficit, totalActualW, allowableW);
+                }
+            } else {
+                document.getElementById('dryMethodSegment').style.display = 'none';
+                document.getElementById('drySample100Group').style.display = 'none';
+                document.getElementById('dryTotalActualGroup').style.display = 'block';
+                const totalActualW = parseFloat(document.getElementById('dryTotalActualWeight').value);
+                if (isNaN(totalActualW) || totalActualW <= 0) {
+                    resultsSec.style.display = 'none';
+                    updateDrySteps(totalQty, NaN, NaN, NaN, false, NaN, NaN);
+                    return;
+                }
+                const allowableW = totalQty * 0.99;
+                isDeficit = totalActualW < allowableW;
+                if (isDeficit) {
+                    const deficit = totalQty - totalActualW;
+                    comp = Math.ceil(deficit); 
+                    actual = totalQty - comp;
+                    document.getElementById('dryCompBox').style.display = 'block';
+                } else {
+                    document.getElementById('dryCompBox').style.display = 'none';
+                }
+                document.getElementById('dryResActual').innerText = actual.toFixed(1) + ' كجم';
+                document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
+                resultsSec.style.display = 'block';
+                updateDrySteps(totalQty, NaN, actual, comp, isDeficit, totalActualW, allowableW);
+            }
+        }
+
+        function switchCasings(type) {
+            currentCasingType = type;
+            document.getElementById('segmentHank').classList.toggle('active', type === 'hank');
+            document.getElementById('segmentMombar').classList.toggle('active', type === 'mombar');
+            const label = document.getElementById('caseLabel');
+            if (type === 'hank') {
+                label.innerText = "وزن لحم الحشو لعينة واحدة (كجم)";
+            } else {
+                label.innerText = "طول عينة واحدة (سنتيمتر)";
+            }
+            calculateCasings();
+        }
+
+        function updateCasingsSteps(totalQty, value, standard, actual, comp, isDeficit) {
+            const box = document.getElementById('caseStepsBox');
+            if (isNaN(totalQty) || isNaN(value) || totalQty <= 0 || value <= 0) {
+                box.innerHTML = `
+                    <h4>💡 طريقة ومراحل الحساب:</h4>
+                    <ol>
+                        <li><b>الهانك المعياري:</b> يجب أن يتسع لحشو 15 كجم لحم. <b>الممبار المعياري:</b> يجب أن يكون بطول 60 سم.</li>
+                        <li>يتم حشو أو قياس عينة فردية واحدة للتأكد من مطابقتها للاستاندر والمواصفات.</li>
+                        <li>إذا قل وزن حشو الهانك أو طول الممبار عن الاستاندر، نحدد نسبة العجز: <code>(المعياري - المقاس الفعلي) ÷ المعياري</code>.</li>
+                        <li><b>عدد حبات التعويض</b> = نسبة العجز × الكمية الكلية (وتقرب لأعلى حبة صحيحة دائماً لضمان الدقة ومصلحة الاستلام).</li>
+                        <li><b>العدد الفعلي المعتمد</b> = الكمية الكلية - عدد حبات التعويض.</li>
+                    </ol>
+                `;
+                return;
+            }
+            const unit = currentCasingType === 'hank' ? 'كجم لحمة' : 'سم مقاس';
+            let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل:</h4><ol>`;
+            html += `<li><b>تقييم العينة المجرية:</b><br>الاستاندر القياسي المطلوب لـ ${currentCasingType === 'hank' ? 'الهانك' : 'الممبار'} = <code>${standard}</code> ${unit}.<br>المحقق الفعلي بالعينة الفردية = <code>${value.toFixed(1)}</code> ${unit}.</li>`;
+            if (isDeficit) {
+                const diff = standard - value;
+                const ratio = diff / standard;
+                const rawComp = totalQty * ratio;
+                html += `<li><b>حساب عجز العينة الفردي والنسبة المئوية:</b><br>العجز الفردي = <code>${standard}</code> - <code>${value.toFixed(1)}</code> = <b><code>${diff.toFixed(1)}</code></b> ${unit}.<br>نسبة العجز الإجمالية = <code>${diff.toFixed(1)}</code> ÷ الاستاندر <code>${standard}</code> = <b><code>${(ratio * 100).toFixed(2)}%</code></b>.</li>`;
+                html += `<li><b>حساب حبات التعويض على كامل الشحنة:</b><br>1. العجز غير المقرب = الكمية الكلية (<code>${totalQty}</code> حبة) × نسبة عجز العينة (<code>${(ratio*100).toFixed(2)}%</code>) = <code>${rawComp.toFixed(3)}</code> حبة.<br>2. تطبيق قاعدة التقريب الإداري المعتمد لأعلى حبة صحيحة دائماً = <b><code>${comp}</code> حبة تعويض خصم</b>.</li>`;
+                html += `<li><b>حساب العدد الفعلي النهائي المعتمد للاستلام:</b><br><code>العدد الفعلي المعتمد</code> = الكمية الكلية (<code>${totalQty}</code> حبة) - حبات التعويض (<code>${comp}</code> حبة)<br><code>العدد الفعلي النهائي المعتمد</code> = <b><code>${actual}</code> حبة</b>.</li>`;
+            } else {
+                html += `<li><b>تقييم القبول والاستلام للشحنة:</b><br>بما أن نتيجة العينة (<code>${value.toFixed(1)}</code> ${unit}) مطابقة أو تزيد عن الاستاندر (<code>${standard}</code> ${unit}):<br>تستلم البضاعة بالكامل بدون أي خصم لحبات التعويض:<br><code>العدد الفعلي النهائي المعتمد</code> = <b><code>${actual}</code> حبة</b>.</li>`;
+            }
+            html += `</ol>`;
+            box.innerHTML = html;
+        }
+
+        function calculateCasings() {
+            const totalQty = parseFloat(document.getElementById('caseTotalQty').value);
+            const value = parseFloat(document.getElementById('caseSampleValue').value);
+            const resultsSec = document.getElementById('caseResults');
+            if (!totalQty || !value) {
+                resultsSec.style.display = 'none';
+                updateCasingsSteps(NaN, NaN, NaN, NaN, NaN, false);
+                return;
+            }
+            const standard = currentCasingType === 'hank' ? 15 : 60;
+            let actual = totalQty;
+            let comp = 0;
+            const isDeficit = value < standard;
+            if (isDeficit) {
+                const ratio = (standard - value) / standard;
+                comp = Math.ceil(totalQty * ratio);
+                actual = totalQty - comp;
+                document.getElementById('caseCompBox').style.display = 'block';
+            } else {
+                document.getElementById('caseCompBox').style.display = 'none';
+            }
+            document.getElementById('caseResActual').innerText = actual;
+            document.getElementById('caseResComp').innerText = comp;
+            resultsSec.style.display = 'block';
+            updateCasingsSteps(totalQty, value, standard, actual, comp, isDeficit);
+        }
+
+        function getQuarterDays(totalDays) {
+            if (totalDays > 1095) return 90;   // أكبر من 3 سنوات
+            if (totalDays > 730) return 45;    // من سنتين لـ 3 سنوات
+            if (totalDays > 365) return 30;    // من سنة لسنتين
+            if (totalDays > 90) return 15;     // من 3 شهور لسنة
+            if (totalDays > 30) return 7;      // من شهر لـ 3 شهور
+            return 3;                          // أقل من شهر
+        }
+
+        function calculateExpiry() {
+            const prodDate = getWidgetDate('expProdDate');
+            const endDate = getWidgetDate('expEndDate');
+            const resultsSec = document.getElementById('expResults');
+            if (!prodDate || !endDate) {
+                resultsSec.style.display = 'none';
+                return;
+            }
+            const errBlock = document.getElementById('expErr');
+            const cleanResults = document.getElementById('expCleanResults');
+            if (endDate <= prodDate) {
+                errBlock.style.display = 'flex';
+                cleanResults.style.display = 'none';
+                resultsSec.style.display = 'block';
+                return;
+            }
+            errBlock.style.display = 'none';
+            cleanResults.style.display = 'block';
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const totalDays = Math.round((endDate - prodDate) / (1000 * 60 * 60 * 24));
+            const passedDays = Math.max(0, Math.round((today - prodDate) / (1000 * 60 * 60 * 24)));
+            const remainingDays = totalDays - passedDays;
+            
+            function formatDuration(days) {
+                const y = Math.floor(days / 365);
+                const m = Math.floor((days % 365) / 30);
+                const d = Math.floor((days % 365) % 30);
+                let str = [];
+                if (y > 0) str.push(`${y} سنة`);
+                if (m > 0) str.push(`${m} شهر`);
+                if (d > 0 || str.length === 0) str.push(`${d} يوم`);
+                return str.join(' و ');
+            }
+            const isExpired = remainingDays <= 0;
+            const isPassedHalf = passedDays > (totalDays / 2) && !isExpired;
+            const warningThreshold = getQuarterDays(totalDays);
+            const isQuarterRemaining = remainingDays <= warningThreshold && !isExpired;
+            
+            document.getElementById('expResTotal').innerText = formatDuration(totalDays);
+            document.getElementById('expResPassed').innerText = formatDuration(passedDays);
+            const halfDays = totalDays / 2;
+            const halfBox = document.getElementById('expHalfBox');
+            const halfLabelEl = document.getElementById('expHalfLabel');
+            const halfValueEl = document.getElementById('expResHalf');
+            if (halfBox && halfLabelEl && halfValueEl) {
+                if (passedDays < halfDays) {
+                    const daysToHalf = Math.round(halfDays - passedDays);
+                    halfLabelEl.innerText = "الوقت المتبقي للوصول لنصف مدة الصلاحية";
+                    halfValueEl.innerText = formatDuration(daysToHalf);
+                    halfBox.className = "result-box blue"; 
+                } else {
+                    const daysPastHalf = Math.round(passedDays - halfDays);
+                    halfLabelEl.innerText = "الوقت المنقضي بعد نصف مدة الصلاحية";
+                    halfValueEl.innerText = formatDuration(daysPastHalf);
+                    halfBox.className = "result-box orange"; 
+                }
+                halfBox.style.display = 'block';
+            }
+            const remVal = document.getElementById('expResRemaining');
+            const remBox = document.getElementById('expRemainingBox');
+            if (isExpired) {
+                remVal.innerText = "منتهي الصلاحية";
+                remBox.className = "result-box red";
+                if (halfBox) halfBox.style.display = 'none'; 
+            } else {
+                remVal.innerText = formatDuration(remainingDays);
+                remBox.className = "result-box green";
+            }
+            let alertHtml = "";
+            if (isExpired) {
+                alertHtml += `<div class="alert-banner red">🛑 تحذير: هذا المنتج منتهي الصلاحية تماماً!</div>`;
+            } else {
+                if (isPassedHalf) {
+                    alertHtml += `<div class="alert-banner orange">⚠️ تنبيه: تجاوز المنتج نصف مدة الصلاحية!</div>`;
+                }
+                if (isQuarterRemaining) {
+                    alertHtml += `<div class="alert-banner yellow">⏳ تنبيه الربع مدة: دخل المنتج في الربع الأخير من الصلاحية (متبقي أقل من ${warningThreshold} يوم)!</div>`;
+                }
+            }
+            document.getElementById('expAlerts').innerHTML = alertHtml;
+            resultsSec.style.display = 'block';
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('نظام التصفح الأوفلاين نشط'))
+                    .catch(err => console.log('خطأ في نظام الأوفلاين', err));
+            });
+        }
+    </script>
+</body>
+</html>
