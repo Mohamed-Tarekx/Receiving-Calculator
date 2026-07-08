@@ -610,6 +610,10 @@
                     <span class="card-title">حاسبة صلاحية المنتجات</span>
                     <span class="arrow-left">&#10094;</span>
                 </button>
+                <button class="menu-card" onclick="openModule('tares')">
+                    <span class="card-title">فوارغ الموازين</span>
+                    <span class="arrow-left">&#10094;</span>
+                </button>
             </div>
         </div>
 
@@ -1110,6 +1114,34 @@
                 </ul>
             </div>
         </div>
+
+        <!-- MODULE: Tares Search (فوارغ الموازين) -->
+        <div id="taresView" class="module-view">
+            <div class="module-header">
+                <button class="back-btn" onclick="goHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                <span class="module-title">فوارغ الموازين</span>
+            </div>
+            <div class="info-box">
+                ابحث بالباركود أو كود المورد لمعرفة فارغ الكرتونة، فارغ الكيس، ووزن الوحدة المعتمدة للصنف.
+            </div>
+
+            <div id="taresDbStatusIndicator"></div>
+
+            <div class="form-group" style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 24px;">
+                <label style="color: var(--primary-dark); font-size: 0.95rem; margin-bottom: 10px;">تحديث قاعدة بيانات الفوارغ (رفع ملف الإكسيل)</label>
+                <input type="file" id="taresExcelFile" accept=".xlsx, .xls, .csv" onchange="handleTaresExcelUpload(event)" style="padding: 10px; font-size: 0.9rem; background: #fff;">
+            </div>
+
+            <div class="form-group">
+                <label>بحث بالباركود أو كود المورد</label>
+                <input type="text" id="taresSearchInput" placeholder="مثال: 2300011000005 أو 553" oninput="searchTares()">
+            </div>
+
+            <div class="results-section" id="taresResults" style="display: none;">
+                <h3 class="results-title">نتيجة البحث:</h3>
+                <div id="taresResultContent"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Notification Toast system -->
@@ -1385,6 +1417,149 @@
         }
 
         window.addEventListener('DOMContentLoaded', updateDBStatus);
+
+        // --- TARES (فوارغ الموازين) SYSTEM ---
+        function updateTaresDBStatus() {
+            const dbStr = localStorage.getItem('taresDB');
+            const statusEl = document.getElementById('taresDbStatusIndicator');
+            if (statusEl) {
+                if (!dbStr) {
+                    statusEl.innerHTML = `<div class="alert-banner red">🔴 قاعدة بيانات الفوارغ فارغة. جاري التحميل التلقائي أو يرجى رفع الشيت!</div>`;
+                    fetchDefaultTaresDB();
+                } else {
+                    const db = JSON.parse(dbStr);
+                    statusEl.innerHTML = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46;">✅ قاعدة بيانات الفوارغ محملة وجاهزة! (عدد الأصناف: ${db.length})</div>`;
+                }
+            }
+        }
+
+        function fetchDefaultTaresDB() {
+            fetch('./tares_db.xlsx')
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    const db = processTaresWorkbook(data);
+                    if (db.length > 0) {
+                        localStorage.setItem('taresDB', JSON.stringify(db));
+                        updateTaresDBStatus();
+                        showNotification(`تم تحميل شيت الفوارغ تلقائياً! (${db.length} صنف)`);
+                    }
+                })
+                .catch(error => {
+                    console.log("No default tares DB found on server, waiting for manual upload.", error);
+                });
+        }
+
+        function processTaresWorkbook(arrayBufferData) {
+            const workbook = XLSX.read(arrayBufferData, {type: 'array'});
+            // نقرأ كل الشيتات المتاحة (زي Sheet1 و Sheet3)، والصنف اللي في أول شيت بترتيب workbook.SheetNames
+            // بياخد أولوية لو نفس الباركود مكرر في أكتر من شيت.
+            const byBarcode = {};
+            workbook.SheetNames.forEach(sheetName => {
+                const worksheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                for (let i = 1; i < rows.length; i++) { // نتخطى صف العناوين
+                    const row = rows[i];
+                    if (!row || row.length === 0) continue;
+                    const supplierCode = row[0] !== undefined && row[0] !== null ? String(row[0]).trim() : "";
+                    const supplierName = row[1] !== undefined && row[1] !== null ? String(row[1]).trim() : "";
+                    const barcode = row[2] !== undefined && row[2] !== null ? String(row[2]).trim() : "";
+                    const itemName = row[3] !== undefined && row[3] !== null ? String(row[3]).trim() : "";
+                    const cartonTare = row[4] !== undefined && row[4] !== null ? row[4] : "";
+                    const bagTare = row[5] !== undefined && row[5] !== null ? row[5] : "";
+                    const unitWeight = row[6] !== undefined && row[6] !== null ? row[6] : "";
+                    const notes = row[7] !== undefined && row[7] !== null ? String(row[7]).trim() : "";
+                    if (!barcode && !itemName) continue;
+                    const entry = { supplierCode, supplierName, barcode, itemName, cartonTare, bagTare, unitWeight, notes };
+                    const key = barcode || `${supplierCode}-${itemName}`;
+                    // أول شيت في الترتيب (Sheet1) له الأولوية: لو الكود موجود بالفعل من شيت سابق، نتجاهل النسخة الجديدة.
+                    if (!(key in byBarcode)) {
+                        byBarcode[key] = entry;
+                    }
+                }
+            });
+            return Object.values(byBarcode);
+        }
+
+        function handleTaresExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const db = processTaresWorkbook(data);
+                    if (db.length === 0) {
+                        showNotification("لم يتم العثور على بيانات صالحة! تأكد من شكل الشيت.");
+                        return;
+                    }
+                    localStorage.setItem('taresDB', JSON.stringify(db));
+                    updateTaresDBStatus();
+                    showNotification(`تم الحفظ بنجاح! تم استخراج ${db.length} صنف بدقة.`);
+                    event.target.value = '';
+                    searchTares();
+                } catch (err) {
+                    console.error(err);
+                    showNotification("حدث خطأ أثناء قراءة الملف، تأكد من أنه بصيغة Excel صالحة.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function searchTares() {
+            const input = document.getElementById('taresSearchInput').value.trim().toLowerCase();
+            const resultsSec = document.getElementById('taresResults');
+            const contentDiv = document.getElementById('taresResultContent');
+            if (input.length === 0) {
+                resultsSec.style.display = 'none';
+                return;
+            }
+            const dbStr = localStorage.getItem('taresDB');
+            if (!dbStr) {
+                contentDiv.innerHTML = `<div class="alert-banner red">يرجى رفع شيت الفوارغ أولاً لتهيئة قاعدة البيانات!</div>`;
+                resultsSec.style.display = 'block';
+                return;
+            }
+            const db = JSON.parse(dbStr);
+            const matches = db.filter(item =>
+                (item.barcode && item.barcode.toLowerCase().includes(input)) ||
+                (item.supplierCode && item.supplierCode.toLowerCase().includes(input)) ||
+                (item.itemName && item.itemName.toLowerCase().includes(input))
+            );
+            if (matches.length > 0) {
+                let html = '';
+                matches.forEach(m => {
+                    const notesHtml = m.notes
+                        ? `<div style="margin-top: 8px; font-size: 0.85rem; color: #92400e; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px;">📝 ملاحظة: ${m.notes}</div>`
+                        : '';
+                    html += `
+                        <div class="result-box" style="margin-bottom: 12px;">
+                            <div class="result-box-label">${m.itemName || 'صنف غير مسمى'}</div>
+                            <div class="result-box-value" style="font-size: 1rem;">الباركود: ${m.barcode || 'غير محدد'} | كود المورد: ${m.supplierCode || 'غير محدد'} (${m.supplierName || ''})</div>
+                            <div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center;">
+                                <div><div style="font-size:0.8rem; color:#64748b;">فارغ الكرتونة</div><div style="font-weight:bold;">${m.cartonTare !== "" ? m.cartonTare : '-'}</div></div>
+                                <div><div style="font-size:0.8rem; color:#64748b;">فارغ الكيس</div><div style="font-weight:bold;">${m.bagTare !== "" ? m.bagTare : '-'}</div></div>
+                                <div><div style="font-size:0.8rem; color:#64748b;">وزن الوحدة</div><div style="font-weight:bold;">${m.unitWeight !== "" ? m.unitWeight : '-'}</div></div>
+                            </div>
+                            ${notesHtml}
+                        </div>
+                    `;
+                });
+                contentDiv.innerHTML = html;
+            } else {
+                contentDiv.innerHTML = `
+                    <div class="result-box red">
+                        <div class="result-box-label">لا توجد نتائج</div>
+                        <div class="result-box-value" style="font-size: 1rem;">مفيش صنف مطابق للكود أو الباركود ده في قاعدة البيانات.</div>
+                    </div>
+                `;
+            }
+            resultsSec.style.display = 'block';
+        }
+
+        window.addEventListener('DOMContentLoaded', updateTaresDBStatus);
 
         // --- Navigation (Swipe to go back via History API) ---
         function showHome() {
