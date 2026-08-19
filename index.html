@@ -753,6 +753,10 @@
                     <span class="card-title">تخصيم اللحمة الفاكيوم</span>
                     <span class="arrow-left">&#10094;</span>
                 </button>
+                <button class="menu-card" onclick="openModule('docSearch')">
+                    <span class="card-title">بحث في إذن الصرف</span>
+                    <span class="arrow-left">&#10094;</span>
+                </button>
             </div>
         </div>
 
@@ -1337,6 +1341,40 @@
                     <li>التقاطيع = صافي الوزن × 2% (للأصناف المشمولة فقط).</li>
                     <li>الاذن = صافي الوزن - التقاطيع (للأصناف المشمولة)، أو = صافي الوزن مباشرة (للأصناف غير المشمولة بالتقاطيع).</li>
                     <li>الإجماليات الكلية للشحنة = مجموع كل الأصناف المضافة فعلياً.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- MODULE: Document Search (بحث في إذن الصرف) -->
+        <div id="docSearchView" class="module-view">
+            <div class="module-header">
+                <button class="back-btn" onclick="goHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                <span class="module-title">بحث في إذن الصرف</span>
+            </div>
+            <div class="info-box">
+                ارفع ملف إكسيل إذن الصرف (نفس التنسيق الثابت اللي بيتطبع بيه من النظام). اكتب <b>آخر أرقام من الباركود</b> في خانة البحث، والبرنامج هيطلعلك رقم الصنف (عمود م)، اسم الصنف، والكمية الفعلية لأي صنف باركوده بينتهي بنفس الأرقام اللي كتبتها بالظبط (مش أي مكان في الباركود).
+            </div>
+
+            <div class="form-group" style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 24px;">
+                <label style="color: var(--primary-dark); font-size: 0.95rem; margin-bottom: 10px;">رفع ملف إذن الصرف (إكسيل)</label>
+                <input type="file" id="docExcelFile" accept=".xlsx, .xls, .csv" onchange="handleDocExcelUpload(event)" style="padding: 10px; font-size: 0.9rem; background: #fff;">
+            </div>
+
+            <div id="docPagesStatus"></div>
+
+            <div class="form-group" id="docSearchGroup" style="display:none;">
+                <label>بحث بآخر أرقام من الباركود</label>
+                <input type="text" id="docSearchInput" inputmode="numeric" placeholder="مثال: 150 (يبحث عن باركود ينتهي بـ 150)" oninput="searchDocPages()">
+            </div>
+
+            <div id="docSearchResults"></div>
+
+            <div class="steps-box" id="docSearchStepsBox">
+                <h4>💡 طريقة الاستخدام:</h4>
+                <ol>
+                    <li>ارفع ملف إذن الصرف بصيغة إكسيل (نفس شكله المطبوع من النظام، بدون أي تعديل في ترتيب الأعمدة).</li>
+                    <li>اكتب آخر أرقام من الباركود في خانة البحث (مش لازم الباركود كامل). البرنامج بيدور فقط على الأصناف اللي باركودها بينتهي بنفس الأرقام دي بالظبط، مش أي صنف باركوده فيه نفس الأرقام في أي مكان.</li>
+                    <li>لو أكتر من صنف نهايته نفس الأرقام، هيظهرلك كل الأصناف المطابقة مع رقمها بعمود "م" واسمها وكميتها الفعلية.</li>
                 </ol>
             </div>
         </div>
@@ -2329,6 +2367,151 @@
         }
 
         window.addEventListener('DOMContentLoaded', populateVacuumItemSelect);
+
+        // --- DOCUMENT SEARCH MODULE (بحث في إذن الصرف) - قائم على رفع ملف إكسيل الإذن مباشرة ---
+        // كل صف في الشيت بيمثل صنف واحد بالأعمدة الثابتة: م / الباركود / اسم الصنف / الكمية الفعلية
+        // (نفس تنسيق الطباعة الأصلي من نظام المخازن، بترتيب أعمدة ثابت حتى لو البيانات بتتغير كل مرة).
+        let docItems = []; // { mNumber, barcode, itemName, actualQty }
+        let docFileLoaded = false;
+
+        // فهرسة أعمدة الشيت بالاعتماد على نص صف العناوين نفسه (مش على رقم عمود ثابت) عشان نضمن الدقة
+        // حتى لو تغير ترتيب الأعمدة شوية بين نسخة وأخرى من نفس تنسيق الطباعة.
+        function findDocHeaderRow(rows) {
+            for (let i = 0; i < Math.min(rows.length, 20); i++) {
+                const row = rows[i];
+                if (!row) continue;
+                const rowText = row.map(c => (c !== undefined && c !== null) ? String(c).trim() : '');
+                const hasM = rowText.some(c => c === 'م');
+                const hasBarcode = rowText.some(c => c.includes('الباركود'));
+                const hasName = rowText.some(c => c.includes('اسم الصنف'));
+                if (hasM && hasBarcode && hasName) {
+                    return { index: i, rowText };
+                }
+            }
+            return null;
+        }
+
+        function processDocExcelData(rows) {
+            const header = findDocHeaderRow(rows);
+            if (!header) return [];
+            const rowText = header.rowText;
+            const mCol = rowText.findIndex(c => c === 'م');
+            const barcodeCol = rowText.findIndex(c => c.includes('الباركود'));
+            const nameCol = rowText.findIndex(c => c.includes('اسم الصنف'));
+            const actualQtyCol = rowText.findIndex(c => c.includes('الكمية الفعلية'));
+
+            const items = [];
+            for (let i = header.index + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row) continue;
+                const mRaw = row[mCol];
+                const barcodeRaw = row[barcodeCol];
+                const nameRaw = row[nameCol];
+                // نتجاهل أي صف مالوش رقم صنف (م) أو باركود - زي صفوف التذييل (اسم المدير، خط الفصل، إلخ)
+                if (mRaw === undefined || mRaw === null || String(mRaw).trim() === '') continue;
+                if (!/^\d+$/.test(String(mRaw).trim())) continue;
+                const barcode = (barcodeRaw !== undefined && barcodeRaw !== null) ? String(barcodeRaw).trim() : '';
+                if (!barcode) continue;
+                const itemName = (nameRaw !== undefined && nameRaw !== null) ? String(nameRaw).trim() : '';
+                let actualQty = '';
+                if (actualQtyCol !== -1 && row[actualQtyCol] !== undefined && row[actualQtyCol] !== null) {
+                    actualQty = row[actualQtyCol];
+                }
+                items.push({
+                    mNumber: String(mRaw).trim(),
+                    barcode: barcode,
+                    itemName: itemName,
+                    actualQty: actualQty
+                });
+            }
+            return items;
+        }
+
+        function handleDocExcelUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                    const items = processDocExcelData(rows);
+                    if (items.length === 0) {
+                        showNotification("لم يتم العثور على بيانات صالحة! تأكد من أن الملف بنفس تنسيق إذن الصرف الأصلي.");
+                        docFileLoaded = false;
+                        renderDocStatus();
+                        return;
+                    }
+                    docItems = items;
+                    docFileLoaded = true;
+                    renderDocStatus();
+                    showNotification(`تم تحميل الإذن بنجاح! تم استخراج ${items.length} صنف.`);
+                    event.target.value = '';
+                    searchDocPages();
+                } catch (err) {
+                    console.error(err);
+                    showNotification("حدث خطأ أثناء قراءة الملف، تأكد من أنه بصيغة Excel صالحة.");
+                    docFileLoaded = false;
+                    renderDocStatus();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderDocStatus() {
+            const statusEl = document.getElementById('docPagesStatus');
+            const searchGroup = document.getElementById('docSearchGroup');
+            if (!statusEl) return;
+            if (!docFileLoaded || docItems.length === 0) {
+                statusEl.innerHTML = '';
+                if (searchGroup) searchGroup.style.display = 'none';
+                return;
+            }
+            statusEl.innerHTML = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46;">✅ تم تحميل الإذن (${docItems.length} صنف) وجاهز للبحث</div>`;
+            if (searchGroup) searchGroup.style.display = 'block';
+        }
+
+        function searchDocPages() {
+            const rawInput = document.getElementById('docSearchInput').value.trim();
+            const resultsDiv = document.getElementById('docSearchResults');
+            if (!resultsDiv) return;
+            if (rawInput.length === 0) {
+                resultsDiv.innerHTML = '';
+                return;
+            }
+            if (!docFileLoaded || docItems.length === 0) {
+                resultsDiv.innerHTML = `<div class="alert-banner red">يرجى رفع ملف إذن الصرف أولاً!</div>`;
+                return;
+            }
+            // نطابق فقط لو الباركود بينتهي بنفس الأرقام المكتوبة بالظبط (مش أي مكان فيه، بداية أو نص الباركود)
+            const searchDigits = rawInput.replace(/\D/g, '');
+            let matches = [];
+            if (searchDigits.length > 0) {
+                matches = docItems.filter(it => it.barcode.endsWith(searchDigits));
+            }
+
+            if (matches.length === 0) {
+                resultsDiv.innerHTML = `<div class="alert-banner red">لا يوجد صنف بالإذن باركوده منتهي بالأرقام دي.</div>`;
+                return;
+            }
+
+            let html = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46;">تم العثور على ${matches.length} صنف مطابق</div>`;
+            matches.forEach(it => {
+                const qtyText = (it.actualQty !== '' && it.actualQty !== undefined && it.actualQty !== null) ? it.actualQty : '-';
+                html += `
+                    <div class="result-box blue" style="margin-top: 10px;">
+                        <div class="result-box-label">رقم الصنف بالإذن (م): <b style="font-size:1.1rem;">${it.mNumber}</b></div>
+                        <div class="result-box-value" style="font-size: 1.05rem;">${it.itemName || '(اسم الصنف غير متوفر)'}</div>
+                        <div style="font-size: 0.9rem; color: #475569; margin-top:4px; direction:ltr; text-align:right;">الباركود: ${it.barcode}</div>
+                        <div style="font-size: 0.9rem; color: #475569; margin-top:4px;">الكمية الفعلية: <b>${qtyText}</b></div>
+                    </div>
+                `;
+            });
+            resultsDiv.innerHTML = html;
+        }
 
         // --- Navigation (Swipe to go back via History API) ---
         function showHome() {
