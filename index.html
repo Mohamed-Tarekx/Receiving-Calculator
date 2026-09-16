@@ -253,6 +253,40 @@
             font-weight: 600;
         }
 
+        /* حاوية خانة البحث اللي معاها زرار مسح سريع (×) - عشان تسريع إدخال الأرقام بأجهزة PDA */
+        .search-with-clear {
+            position: relative;
+        }
+        .search-with-clear input {
+            padding-left: 44px; /* مساحة لزرار المسح (الجهة اليسار لأن اتجاه الصفحة RTL) */
+        }
+        .search-clear-btn {
+            position: absolute;
+            left: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 50%;
+            background-color: #e2e8f0;
+            color: #475569;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .search-clear-btn.visible {
+            display: flex;
+        }
+        .search-clear-btn:active {
+            background-color: var(--primary);
+            color: white;
+        }
+
         input:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(244, 129, 32, 0.15);
@@ -714,7 +748,11 @@
                     <span class="arrow-left">&#10094;</span>
                 </button>
                 <button class="menu-card" onclick="openModule('processed')">
-                    <span class="card-title">الجبن المستحلب / المخللات</span>
+                    <span class="card-title">الجبن المستحلب</span>
+                    <span class="arrow-left">&#10094;</span>
+                </button>
+                <button class="menu-card" onclick="openModule('pickles')">
+                    <span class="card-title">المخللات</span>
                     <span class="arrow-left">&#10094;</span>
                 </button>
                 <button class="menu-card" onclick="openModule('roumi')">
@@ -781,7 +819,10 @@
 
             <div class="form-group">
                 <label>بحث برقم الكود أو اسم الشركة</label>
-                <input type="text" id="companySearchInput" placeholder="مثال: 121 أو الصقر" oninput="searchCompany()">
+                <div class="search-with-clear">
+                    <input type="text" id="companySearchInput" placeholder="مثال: 121 أو الصقر" oninput="searchCompany(); toggleClearBtn('companySearchInput','companySearchClearBtn');">
+                    <button type="button" id="companySearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('companySearchInput','companySearchClearBtn', searchCompany)">✕</button>
+                </div>
             </div>
 
             <div class="results-section" id="checkResults" style="display: none;">
@@ -841,19 +882,19 @@
             </div>
         </div>
 
-        <!-- 2. Processed Cheese / Pickles Module -->
+        <!-- 2. Processed Cheese Module -->
         <div id="processedView" class="module-view">
             <div class="module-header">
                 <button class="back-btn" onclick="goHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
-                <span class="module-title">الجبن المستحلب / المخللات</span>
+                <span class="module-title">الجبن المستحلب</span>
             </div>
-            <div class="info-box">الاستلام بناءً على <b>أقل وزن تصفية</b>. في حال ارتفاع كل الصفائح/العبوات عن المعياري؛ يُحسب التعويض (ينطبق على الجبن المستحلب والمخللات).</div>
+            <div class="info-box">أدخل الاستاندر المعياري (إجباري). لو <b>كل</b> العينات أعلى من الاستاندر، يُعتمد الاستاندر نفسه للاستلام والتعويض. لو فيه عينات أقل من أو تساوي الاستاندر، يُعتمد <b>أقل وزن تصفية موجود فعلياً</b> بدلاً منه.</div>
             <div class="form-group">
                 <label>الكمية الكلية (عدد الجرادل/الصفائح)</label>
                 <input type="number" id="procTotalQty" oninput="calculateProcessed()">
             </div>
             <div class="form-group">
-                <label>الوزن الاستاندر المعياري (اختياري)</label>
+                <label>الوزن الاستاندر المعياري (إجباري)</label>
                 <input type="number" id="procStandard" oninput="calculateProcessed()" placeholder="مثال: 20">
             </div>
             <div class="samples-container">
@@ -869,7 +910,7 @@
             <div class="results-section" id="procResults" style="display: none;">
                 <h3 class="results-title">النتائج:</h3>
                 <div class="result-box blue">
-                    <div class="result-box-label">أقل وزن تصفية (الذي تم الاستلام عليه)</div>
+                    <div class="result-box-label" id="procResMinLabel">الاستاندر المعتمد للاستلام</div>
                     <div class="result-box-value" id="procResMin">0 كجم</div>
                 </div>
                 <div class="result-box green">
@@ -884,13 +925,64 @@
             <div class="steps-box" id="procStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
-                    <li>يتم تصفية العينات المختارة وتحديد الوزن الصافي لكل عينة في المعمل.</li>
-                    <li>يتم اختيار <b>أقل وزن تصفية</b> بين العينات وتعتمد عليه عملية الاستلام بالكامل.</li>
-                    <li><code>الكمية الفعلي</code> = أقل وزن تصفية × الكمية الكلية.</li>
-                    <li><b>شرط الاستاندر:</b> إذا كانت جميع العينات الموزونة أعلى من الوزن المعياري (الاستاندر)، يتم الاستلام على الاستاندر، ويُحسب التعويض بالمعادلة التالية لصالح الشركة: <code>التعويض = (متوسط العينات الصافي - الوزن الصافي اللي تم الاستلام عليه "الاستاندر") × الكمية الكلية</code>.</li>
+                    <li>يتم تصفية العينات المختارة وتحديد الوزن الصافي لكل عينة في المعمل، ويجب تحديد وزن استاندر معياري.</li>
+                    <li><b>لو كل العينات أعلى من الاستاندر (بصرامة):</b> يُعتمد الاستاندر اليدوي نفسه كوزن استلام. <code>الفعلي</code> = الاستاندر × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - الاستاندر. <code>التعويض الكلي</code> = تعويض الجردل الواحد × الكمية الكلية.</li>
+                    <li><b>لو فيه عينة واحدة على الأقل ≤ الاستاندر:</b> يُعتمد <b>أقل وزن موجود فعلياً</b> بدلاً من الاستاندر اليدوي. <code>الفعلي</code> = أقل وزن × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - أقل وزن. <code>التعويض الكلي</code> = تعويض الجردل الواحد × الكمية الكلية.</li>
                 </ol>
             </div>
         </div>
+
+        <!-- 2b. Pickles Module -->
+        <div id="picklesView" class="module-view">
+            <div class="module-header">
+                <button class="back-btn" onclick="goHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                <span class="module-title">المخللات</span>
+            </div>
+            <div class="info-box">أدخل الاستاندر المعياري (إجباري). لو <b>كل</b> العينات أعلى من الاستاندر، يُعتمد الاستاندر نفسه للاستلام والتعويض. لو فيه عينات أقل من أو تساوي الاستاندر، يُعتمد <b>أقل وزن تصفية موجود فعلياً</b> بدلاً منه. <b>التعويض هنا يُضرب في عدد العينات المصفّاة فقط، وليس في الكمية الكلية.</b></div>
+            <div class="form-group">
+                <label>الكمية الكلية (عدد الجرادل/العبوات)</label>
+                <input type="number" id="pickTotalQty" oninput="calculatePickles()">
+            </div>
+            <div class="form-group">
+                <label>الوزن الاستاندر المعياري (إجباري)</label>
+                <input type="number" id="pickStandard" oninput="calculatePickles()" placeholder="مثال: 20">
+            </div>
+            <div class="samples-container">
+                <div class="samples-header">
+                    <label>أوزان التصفية (الصافي)</label>
+                    <button class="add-sample-btn" id="pickAddBtn" onclick="addSampleField('pick')">+ إضافة وزن</button>
+                </div>
+                <div id="pickSamplesList">
+                    <div class="form-group"><input type="number" class="pick-sample" oninput="calculatePickles()" placeholder="وزن العينة 1"></div>
+                    <div class="form-group"><input type="number" class="pick-sample" oninput="calculatePickles()" placeholder="وزن العينة 2"></div>
+                </div>
+            </div>
+            <div class="results-section" id="pickResults" style="display: none;">
+                <h3 class="results-title">النتائج:</h3>
+                <div class="result-box blue">
+                    <div class="result-box-label" id="pickResMinLabel">الاستاندر المعتمد للاستلام</div>
+                    <div class="result-box-value" id="pickResMin">0 كجم</div>
+                </div>
+                <div class="result-box green">
+                    <div class="result-box-label">الكمية الفعلي المعتمدة</div>
+                    <div class="result-box-value" id="pickResActual">0 كجم</div>
+                </div>
+                <div class="result-box orange" id="pickCompBox" style="display: none;">
+                    <div class="result-box-label">التعويض (لعدد الجرادل المصفّاة فقط)</div>
+                    <div class="result-box-value" id="pickResComp">0 كجم</div>
+                </div>
+            </div>
+            <div class="steps-box" id="pickStepsBox">
+                <h4>💡 طريقة ومراحل الحساب:</h4>
+                <ol>
+                    <li>يتم تصفية العينات المختارة وتحديد الوزن الصافي لكل عينة في المعمل، ويجب تحديد وزن استاندر معياري.</li>
+                    <li><b>لو كل العينات أعلى من الاستاندر (بصرامة):</b> يُعتمد الاستاندر اليدوي نفسه كوزن استلام. <code>الفعلي</code> = الاستاندر × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - الاستاندر.</li>
+                    <li><b>لو فيه عينة واحدة على الأقل ≤ الاستاندر:</b> يُعتمد <b>أقل وزن موجود فعلياً</b> بدلاً من الاستاندر اليدوي. <code>الفعلي</code> = أقل وزن × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - أقل وزن.</li>
+                    <li><b>الفرق الجوهري عن المستحلب:</b> <code>التعويض الكلي</code> = تعويض الجردل الواحد × <b>عدد العينات اللي اتصفّت فعلاً فقط</b> (مش الكمية الكلية المستلمة بالشحنة).</li>
+                </ol>
+            </div>
+        </div>
+
 
         <!-- 3. Roumi Cheese Module -->
         <div id="roumiView" class="module-view">
@@ -1091,7 +1183,7 @@
                 <button class="back-btn" onclick="goHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                 <span class="module-title">الرز والسكر والدقيق</span>
             </div>
-            <div class="info-box">مسموح بعجز حتى 10 جرام لكل كيلو (1%). إذا زاد العجز عن السماحية، <b>يتم خصم العجز بالكامل من الوزن الأساسي</b> وليس من حد السماحية.</div>
+            <div class="info-box">مسموح بعجز حتى 10 جرام لكل كيلو (الحد الأدنى المقبول 990 جرام لكل كيلو / 99%). <b>لا يوجد تعويض جزئي إطلاقاً:</b> لو الوزن الفعلي وصل للحد المسموح أو أعلى، تُستلم الكمية <b>كاملة</b> كما هي بالفاتورة. لو قل عن الحد المسموح، تُرفض الشحنة بالكامل.</div>
             
             <div class="form-group">
                 <label>الكمية الكلية المستلمة (كجم)</label>
@@ -1114,22 +1206,19 @@
 
             <div class="results-section" id="dryResults" style="display: none;">
                 <h3 class="results-title">النتائج:</h3>
-                <div class="result-box green">
-                    <div class="result-box-label">الكمية الفعلي المعتمدة</div>
+                <div class="result-box green" id="dryActualBox">
+                    <div class="result-box-label" id="dryResActualLabel">الكمية الفعلي المعتمدة (تُستلم كاملة)</div>
                     <div class="result-box-value" id="dryResActual">0 كجم</div>
                 </div>
-                <div class="result-box red" id="dryCompBox" style="display: none;">
-                    <div class="result-box-label">التعويض المطلوب خصمه (مقرب لأعلى)</div>
-                    <div class="result-box-value" id="dryResComp">0 كجم</div>
-                </div>
+                <div id="dryDecisionBanner"></div>
             </div>
             <div class="steps-box" id="dryStepsBox">
                 <h4>💡 طريقة ومراحل الحساب:</h4>
                 <ol>
                     <li>نأخذ عينة اختبار وزنها الإجمالي 100 كيلو من البضاعة الموردة بالكامل ونقوم بوزنها بدقة (أو وزن الشحنة بالكامل).</li>
-                    <li>تُعطى نسبة سماح حتى 1 كجم للعينة 100 كجم (أو 1% من الإجمالي).</li>
-                    <li>إذا قل الوزن عن حد السماح (أقل من 99 كجم للعينة أو 99% للشحنة): <b>يُلغى السماح ويتم خصم العجز بالكامل من الوزن الأساسي</b> (100 كجم أو الكمية المطلوبة).</li>
-                    <li><b>التعويض المستحق للشركة</b> يُجبر دائماً ويُقرب لأقرب رقم صحيح أعلى، ويُطرح من الكمية الكلية لحساب الفعلي.</li>
+                    <li>الحد الأدنى المقبول للكيلو الواحد هو 990 جرام (أي 99% من الوزن المكتوب بالفاتورة).</li>
+                    <li>إذا كان الوزن الفعلي (العينة أو الشحنة بالكامل) <b>يساوي أو أكبر</b> من الحد المسموح: تُستلم الكمية بالكامل كما هي مكتوبة بالفاتورة (بدون أي نقصان أو تعويض).</li>
+                    <li>إذا كان الوزن الفعلي <b>أقل</b> من الحد المسموح: <b>تُرفض الشحنة بالكامل</b>، وتصبح الكمية الفعلي المعتمدة = صفر.</li>
                 </ol>
             </div>
         </div>
@@ -1277,7 +1366,10 @@
 
             <div class="form-group">
                 <label>بحث بالباركود أو كود المورد</label>
-                <input type="text" id="taresSearchInput" placeholder="مثال: 2300011000005 أو 553" oninput="searchTares()">
+                <div class="search-with-clear">
+                    <input type="text" id="taresSearchInput" placeholder="مثال: 2300011000005 أو 553" oninput="searchTares(); toggleClearBtn('taresSearchInput','taresSearchClearBtn');">
+                    <button type="button" id="taresSearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('taresSearchInput','taresSearchClearBtn', searchTares)">✕</button>
+                </div>
             </div>
 
             <div class="results-section" id="taresResults" style="display: none;">
@@ -1350,21 +1442,28 @@
             <div class="module-header">
                 <button class="back-btn" onclick="goHome()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
                 <span class="module-title">بحث في إذن الصرف</span>
+                <button id="docCancelBtn" onclick="confirmCancelDocSession()" style="display:none; margin-right:auto; background:var(--danger-bg); border:1px solid var(--danger-border); color:var(--danger); border-radius:8px; padding:8px 12px; font-weight:bold; font-size:0.85rem; cursor:pointer;">✕ إلغاء الإذن</button>
             </div>
             <div class="info-box">
-                ارفع ملف إكسيل إذن الصرف (نفس التنسيق الثابت اللي بيتطبع بيه من النظام). اكتب <b>آخر أرقام من الباركود</b> في خانة البحث، والبرنامج هيطلعلك رقم الصنف (عمود م)، اسم الصنف، والكمية الفعلية لأي صنف باركوده بينتهي بنفس الأرقام اللي كتبتها بالظبط (مش أي مكان في الباركود).
+                ارفع ملف إكسيل إذن الصرف (نفس التنسيق الثابت اللي بيتطبع بيه من النظام). اكتب <b>آخر أرقام من الباركود</b> في خانة البحث، والبرنامج هيطلعلك رقم الصنف (عمود م)، اسم الصنف، والكمية الفعلية لأي صنف باركوده بينتهي بنفس الأرقام اللي كتبتها بالظبط (مش أي مكان في الباركود). تقدر تعلّم على أي صنف استلمته كامل أو تسجل كمية جزئية لقيتها دلوقتي، والتقدم ده بيتحفظ تلقائياً على الجهاز لحد ما تلغي الإذن.
             </div>
 
-            <div class="form-group" style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 24px;">
+            <div class="form-group" id="docUploadGroup" style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px dashed #cbd5e1; margin-bottom: 24px;">
                 <label style="color: var(--primary-dark); font-size: 0.95rem; margin-bottom: 10px;">رفع ملف إذن الصرف (إكسيل)</label>
                 <input type="file" id="docExcelFile" accept=".xlsx, .xls, .csv" onchange="handleDocExcelUpload(event)" style="padding: 10px; font-size: 0.9rem; background: #fff;">
             </div>
 
             <div id="docPagesStatus"></div>
 
+            <button id="docPendingToggleBtn" onclick="toggleDocPendingList()" style="display:none; width:100%; padding:12px; margin-bottom:16px; border-radius:10px; border:1px solid #cbd5e1; background-color:#f8fafc; color:#334155; font-weight:bold; font-size:0.9rem; cursor:pointer;">📋 عرض الأصناف الناقصة والمتجاوزة</button>
+            <div id="docPendingListContainer" style="display:none;"></div>
+
             <div class="form-group" id="docSearchGroup" style="display:none;">
                 <label>بحث بآخر أرقام من الباركود</label>
-                <input type="text" id="docSearchInput" inputmode="numeric" placeholder="مثال: 150 (يبحث عن باركود ينتهي بـ 150)" oninput="searchDocPages()">
+                <div class="search-with-clear">
+                    <input type="text" id="docSearchInput" inputmode="numeric" placeholder="مثال: 150 (يبحث عن باركود ينتهي بـ 150)" oninput="searchDocPages(); toggleClearBtn('docSearchInput','docSearchClearBtn');">
+                    <button type="button" id="docSearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('docSearchInput','docSearchClearBtn', searchDocPages)">✕</button>
+                </div>
             </div>
 
             <div id="docSearchResults"></div>
@@ -1375,6 +1474,11 @@
                     <li>ارفع ملف إذن الصرف بصيغة إكسيل (نفس شكله المطبوع من النظام، بدون أي تعديل في ترتيب الأعمدة).</li>
                     <li>اكتب آخر أرقام من الباركود في خانة البحث (مش لازم الباركود كامل). البرنامج بيدور فقط على الأصناف اللي باركودها بينتهي بنفس الأرقام دي بالظبط، مش أي صنف باركوده فيه نفس الأرقام في أي مكان.</li>
                     <li>لو أكتر من صنف نهايته نفس الأرقام، هيظهرلك كل الأصناف المطابقة مع رقمها بعمود "م" واسمها وكميتها الفعلية.</li>
+                    <li>لو استلمت الصنف بكامل كميته، دوس زرار "✓ استلمنا الكمية كاملة" - هيفضل متعلّم عليه طول الإذن حتى لو دورت عليه تاني أو قفلت البرنامج.</li>
+                    <li>لو لقيت جزء بس من الكمية دلوقتي، اكتب العدد في خانة "تسجيل كمية جزئية" ودوس "إضافة" - كل مرة تضيف رقم بيتجمع على اللي قبله ويتسجل الهيستوري (مثلاً 2 + 3 = 5)، وتقدر تدوس "تعديل" في أي وقت عشان تمسح الهيستوري وتكتب رقم جديد من الأول.</li>
+                    <li>لو حاولت تضيف كمية جزئية هتخلي الإجمالي المسجل أكبر من الكمية الفعلية بالإذن، البرنامج هيحذرك قبل ما يكمل، ولو أكدت هيتلوّن الصنف باللون البرتقالي عشان يبان إنه محتاج مراجعة.</li>
+                    <li>دوس زرار "📋 عرض الأصناف الناقصة والمتجاوزة" في أي وقت عشان تشوف كل الأصناف اللي لسه ماخدتش كامل كميتها، وكمان الأصناف اللي اتسجل لها كمية أكبر من المفروض.</li>
+                    <li>البيانات والتقدم بتتحفظ أوتوماتيك على الجهاز. لو عايز تقفل الإذن الحالي وتبدأ واحد جديد، دوس زرار "✕ إلغاء الإذن" اللي بيظهر فوق.</li>
                 </ol>
             </div>
         </div>
@@ -1463,13 +1567,39 @@
         }
         document.addEventListener('contextmenu', e => e.preventDefault());
 
+        let appToastTimer = null;
         function showNotification(message) {
             const toast = document.getElementById('appToast');
+            if (!toast) return;
+            // نلغي أي مؤقت سابق شغال قبل ما نبدأ واحد جديد، عشان لو الإشعارات جت ورا بعض بسرعة
+            // (أو لو الجهاز/المتصفح أخّر تنفيذ المؤقت القديم) الرسالة القديمة متفضلش عالقة على الشاشة للأبد.
+            if (appToastTimer) {
+                clearTimeout(appToastTimer);
+                appToastTimer = null;
+            }
             toast.innerText = message;
             toast.classList.add('show');
-            setTimeout(() => {
+            appToastTimer = setTimeout(() => {
                 toast.classList.remove('show');
+                appToastTimer = null;
             }, 3000);
+        }
+
+        // --- زرار المسح السريع (×) لخانات البحث - تسريع إدخال الأرقام بأجهزة الـ PDA ---
+        function toggleClearBtn(inputId, btnId) {
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            if (!input || !btn) return;
+            btn.classList.toggle('visible', input.value.length > 0);
+        }
+
+        function clearSearchInput(inputId, btnId, callback) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.value = '';
+            toggleClearBtn(inputId, btnId);
+            input.focus();
+            if (typeof callback === 'function') callback();
         }
 
         // --- Custom Date Picker Helper ---
@@ -2371,8 +2501,51 @@
         // --- DOCUMENT SEARCH MODULE (بحث في إذن الصرف) - قائم على رفع ملف إكسيل الإذن مباشرة ---
         // كل صف في الشيت بيمثل صنف واحد بالأعمدة الثابتة: م / الباركود / اسم الصنف / الكمية الفعلية
         // (نفس تنسيق الطباعة الأصلي من نظام المخازن، بترتيب أعمدة ثابت حتى لو البيانات بتتغير كل مرة).
+        //
+        // نظام تتبع الاستلام: بيتحفظ في localStorage تحت مفتاح ثابت (DOC_SESSION_KEY) مربوط بالإذن الحالي.
+        // كل صنف بيتحدد بمفتاح فريد = رقم "م" (لأنه فريد داخل كل إذن)، وبيتسجل له:
+        //   - checked: هل اتعلّم عليه كـ"استلمنا الكمية كاملة"
+        //   - partialQty: مجموع الكميات الجزئية المسجلة لحد دلوقتي
+        //   - partialHistory: مصفوفة الأرقام اللي اتضافت بالترتيب (لعرض "2 + 3 = 5")
+        // التخزين بيتحدث فوراً مع أي تغيير عشان يفضل التقدم موجود حتى لو المستخدم قفل المتصفح فجأة.
+        const DOC_SESSION_KEY = 'docSearchSession_v1';
         let docItems = []; // { mNumber, barcode, itemName, actualQty }
         let docFileLoaded = false;
+        let docProgress = {}; // { [mNumber]: { checked: bool, partialQty: number, partialHistory: number[] } }
+
+        function saveDocSession() {
+            try {
+                localStorage.setItem(DOC_SESSION_KEY, JSON.stringify({
+                    items: docItems,
+                    progress: docProgress
+                }));
+            } catch (err) {
+                console.error('تعذر حفظ تقدم الإذن', err);
+            }
+        }
+
+        function loadDocSession() {
+            try {
+                const raw = localStorage.getItem(DOC_SESSION_KEY);
+                if (!raw) return false;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !Array.isArray(parsed.items) || parsed.items.length === 0) return false;
+                docItems = parsed.items;
+                docProgress = parsed.progress || {};
+                docFileLoaded = true;
+                return true;
+            } catch (err) {
+                console.error('تعذر استرجاع تقدم الإذن المحفوظ', err);
+                return false;
+            }
+        }
+
+        function getProgressFor(mNumber) {
+            if (!docProgress[mNumber]) {
+                docProgress[mNumber] = { checked: false, partialQty: 0, partialHistory: [] };
+            }
+            return docProgress[mNumber];
+        }
 
         // فهرسة أعمدة الشيت بالاعتماد على نص صف العناوين نفسه (مش على رقم عمود ثابت) عشان نضمن الدقة
         // حتى لو تغير ترتيب الأعمدة شوية بين نسخة وأخرى من نفس تنسيق الطباعة.
@@ -2446,8 +2619,12 @@
                         return;
                     }
                     docItems = items;
+                    docProgress = {};
                     docFileLoaded = true;
+                    docPendingListVisible = false;
+                    saveDocSession();
                     renderDocStatus();
+                    renderDocPendingList();
                     showNotification(`تم تحميل الإذن بنجاح! تم استخراج ${items.length} صنف.`);
                     event.target.value = '';
                     searchDocPages();
@@ -2464,14 +2641,43 @@
         function renderDocStatus() {
             const statusEl = document.getElementById('docPagesStatus');
             const searchGroup = document.getElementById('docSearchGroup');
+            const uploadGroup = document.getElementById('docUploadGroup');
+            const cancelBtn = document.getElementById('docCancelBtn');
             if (!statusEl) return;
             if (!docFileLoaded || docItems.length === 0) {
                 statusEl.innerHTML = '';
                 if (searchGroup) searchGroup.style.display = 'none';
+                if (uploadGroup) uploadGroup.style.display = 'block';
+                if (cancelBtn) cancelBtn.style.display = 'none';
                 return;
             }
-            statusEl.innerHTML = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46;">✅ تم تحميل الإذن (${docItems.length} صنف) وجاهز للبحث</div>`;
+            const checkedCount = Object.values(docProgress).filter(p => p && p.checked).length;
+            statusEl.innerHTML = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46;">✅ الإذن محمّل (${docItems.length} صنف) — تم استلام ${checkedCount} صنف بالكامل لحد دلوقتي</div>`;
             if (searchGroup) searchGroup.style.display = 'block';
+            // بمجرد ما الإذن يتحمل، بنخفي مربع رفع ملف تاني بالغلط فوق الإذن الحالي - المستخدم لازم يلغي الإذن الحالي أولاً
+            if (uploadGroup) uploadGroup.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'inline-block';
+        }
+
+        function confirmCancelDocSession() {
+            if (!docFileLoaded) return;
+            const ok = window.confirm('هل أنت متأكد أنك عايز تلغي الإذن الحالي؟ هيتمسح كل التقدم المسجل (الأصناف المتعلّم عليها والكميات الجزئية) ومينفعش ترجعه تاني.');
+            if (!ok) return;
+            docItems = [];
+            docProgress = {};
+            docFileLoaded = false;
+            docPendingListVisible = false;
+            localStorage.removeItem(DOC_SESSION_KEY);
+            const searchInput = document.getElementById('docSearchInput');
+            if (searchInput) searchInput.value = '';
+            toggleClearBtn('docSearchInput', 'docSearchClearBtn');
+            const resultsDiv = document.getElementById('docSearchResults');
+            if (resultsDiv) resultsDiv.innerHTML = '';
+            const fileInput = document.getElementById('docExcelFile');
+            if (fileInput) fileInput.value = '';
+            renderDocStatus();
+            renderDocPendingList();
+            showNotification('تم إلغاء الإذن الحالي. تقدر ترفع إذن جديد دلوقتي.');
         }
 
         function searchDocPages() {
@@ -2500,18 +2706,176 @@
 
             let html = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46;">تم العثور على ${matches.length} صنف مطابق</div>`;
             matches.forEach(it => {
-                const qtyText = (it.actualQty !== '' && it.actualQty !== undefined && it.actualQty !== null) ? it.actualQty : '-';
-                html += `
-                    <div class="result-box blue" style="margin-top: 10px;">
-                        <div class="result-box-label">رقم الصنف بالإذن (م): <b style="font-size:1.1rem;">${it.mNumber}</b></div>
-                        <div class="result-box-value" style="font-size: 1.05rem;">${it.itemName || '(اسم الصنف غير متوفر)'}</div>
-                        <div style="font-size: 0.9rem; color: #475569; margin-top:4px; direction:ltr; text-align:right;">الباركود: ${it.barcode}</div>
-                        <div style="font-size: 0.9rem; color: #475569; margin-top:4px;">الكمية الفعلية: <b>${qtyText}</b></div>
-                    </div>
-                `;
+                html += renderDocItemBox(it);
             });
             resultsDiv.innerHTML = html;
         }
+
+        // نحدد لون/حالة عرض الصنف بناءً على تقدمه: أخضر = مستلم كامل، برتقالي = فيه تجاوز للكمية المسجلة عن
+        // الكمية الفعلية بالإذن (يحتاج مراجعة)، أزرق = لسه تحت المتابعة (فاضي أو جزئي عادي).
+        function getDocItemStatus(it, prog) {
+            const actualQtyNum = parseFloat(it.actualQty);
+            const hasValidActualQty = !isNaN(actualQtyNum);
+            const isOver = hasValidActualQty && prog.partialQty > actualQtyNum;
+            if (isOver) return 'over';
+            if (prog.checked) return 'checked';
+            return 'normal';
+        }
+
+        function renderDocItemBox(it) {
+            const qtyText = (it.actualQty !== '' && it.actualQty !== undefined && it.actualQty !== null) ? it.actualQty : '-';
+            const prog = getProgressFor(it.mNumber);
+            const status = getDocItemStatus(it, prog);
+            const boxClass = status === 'checked' ? 'result-box green' : (status === 'over' ? 'result-box orange' : 'result-box blue');
+            const historyText = prog.partialHistory && prog.partialHistory.length > 0
+                ? prog.partialHistory.join(' + ') + ' = ' + prog.partialQty
+                : '';
+            const overWarningHtml = status === 'over'
+                ? `<div class="alert-banner orange" style="margin-top:8px;">⚠️ الكمية المسجلة (${prog.partialQty}) أكبر من الكمية الفعلية بالإذن (${qtyText})! يُرجى المراجعة.</div>`
+                : '';
+            return `
+                    <div class="${boxClass}" style="margin-top: 10px;" id="docItemBox_${it.mNumber}">
+                        <div class="result-box-label">رقم الصنف بالإذن (م): <b style="font-size:1.1rem;">${it.mNumber}</b></div>
+                        <div class="result-box-value" style="font-size: 1.05rem;">${it.itemName || '(اسم الصنف غير متوفر)'}</div>
+                        <div style="font-size: 0.9rem; color: #475569; margin-top:4px; direction:ltr; text-align:right;">الباركود: ${it.barcode}</div>
+                        <div style="font-size: 0.9rem; color: #475569; margin-top:4px;">الكمية الفعلية بالإذن: <b>${qtyText}</b></div>
+                        ${overWarningHtml}
+
+                        <div style="margin-top:12px; padding-top:12px; border-top:1px dashed #cbd5e1;">
+                            <button onclick="toggleDocChecked('${it.mNumber}')" style="width:100%; padding:12px; border-radius:8px; border:none; font-weight:bold; font-size:0.95rem; cursor:pointer; ${status === 'checked' ? 'background-color: var(--success); color:white;' : 'background-color:#e2e8f0; color:#334155;'}">
+                                ${status === 'checked' ? '✓ تم استلام الكمية كاملة' : '✓ استلمنا الكمية كاملة'}
+                            </button>
+                        </div>
+
+                        <div style="margin-top:10px;">
+                            <div style="font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:6px;">تسجيل كمية جزئية موجودة دلوقتي</div>
+                            <div id="docPartialDisplay_${it.mNumber}" style="font-size:0.85rem; color:#0369a1; margin-bottom:6px; ${historyText ? '' : 'display:none;'}">
+                                الكمية المسجلة لحد دلوقتي: <b>${historyText}</b>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <input type="number" id="docPartialInput_${it.mNumber}" placeholder="اكتب العدد اللي لقيته" style="flex:1; padding:10px; font-size:0.95rem;">
+                                <button onclick="addDocPartialQty('${it.mNumber}')" style="background-color: var(--dark-header); color:white; border:none; border-radius:8px; padding:0 16px; font-weight:bold; white-space:nowrap;">إضافة</button>
+                                ${prog.partialHistory && prog.partialHistory.length > 0 ? `<button onclick="resetDocPartialQty('${it.mNumber}')" style="background-color:#f1f5f9; color:#334155; border:1px solid #cbd5e1; border-radius:8px; padding:0 14px; font-weight:bold; white-space:nowrap;">تعديل</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+        }
+
+        function toggleDocChecked(mNumber) {
+            const prog = getProgressFor(mNumber);
+            prog.checked = !prog.checked;
+            saveDocSession();
+            renderDocStatus();
+            searchDocPages();
+            renderDocPendingList();
+        }
+
+        function addDocPartialQty(mNumber) {
+            const input = document.getElementById('docPartialInput_' + mNumber);
+            if (!input) return;
+            const val = parseFloat(input.value);
+            if (isNaN(val) || val <= 0) {
+                showNotification('من فضلك اكتب رقم صحيح أكبر من صفر.');
+                return;
+            }
+            const prog = getProgressFor(mNumber);
+            const it = docItems.find(x => x.mNumber === mNumber);
+            const actualQtyNum = it ? parseFloat(it.actualQty) : NaN;
+            const newTotal = (prog.partialQty || 0) + val;
+            if (it && !isNaN(actualQtyNum) && newTotal > actualQtyNum) {
+                const proceed = window.confirm(`تنبيه: الكمية اللي هتضافها هتخلي إجمالي المسجل (${newTotal}) أكبر من الكمية الفعلية بالإذن (${actualQtyNum}) لنفس الصنف!\n\nهل أنت متأكد إنك عايز تكمل بنفس الرقم؟`);
+                if (!proceed) return;
+            }
+            if (!prog.partialHistory) prog.partialHistory = [];
+            prog.partialHistory.push(val);
+            prog.partialQty = newTotal;
+            saveDocSession();
+            input.value = '';
+            searchDocPages();
+            renderDocPendingList();
+        }
+
+        function resetDocPartialQty(mNumber) {
+            const ok = window.confirm('هيتمسح الهيستوري الحالي وتقدر تكتب رقم جديد من الأول. متأكد؟');
+            if (!ok) return;
+            const prog = getProgressFor(mNumber);
+            prog.partialQty = 0;
+            prog.partialHistory = [];
+            saveDocSession();
+            searchDocPages();
+            renderDocPendingList();
+        }
+
+        // --- عرض الأصناف الناقصة / اللي محتاجة مراجعة ---
+        // "ناقصة": مش متعلّم عليها كـ"مكتملة" وكميتها المسجلة (لو موجودة) أقل من الكمية الفعلية بالإذن.
+        // "تجاوز": كميتها المسجلة أكبر من الكمية الفعلية بالإذن (محتاجة مراجعة بغض النظر عن حالة "مكتملة").
+        let docPendingListVisible = false;
+
+        function toggleDocPendingList() {
+            docPendingListVisible = !docPendingListVisible;
+            renderDocPendingList();
+        }
+
+        function renderDocPendingList() {
+            const container = document.getElementById('docPendingListContainer');
+            const btn = document.getElementById('docPendingToggleBtn');
+            if (!container) return;
+            if (!docFileLoaded || docItems.length === 0) {
+                container.innerHTML = '';
+                container.style.display = 'none';
+                if (btn) btn.style.display = 'none';
+                return;
+            }
+            if (btn) btn.style.display = 'block';
+            if (!docPendingListVisible) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                if (btn) btn.innerText = '📋 عرض الأصناف الناقصة والمتجاوزة';
+                return;
+            }
+            if (btn) btn.innerText = '📋 إخفاء الأصناف الناقصة والمتجاوزة';
+
+            const pendingItems = [];
+            const overItems = [];
+            docItems.forEach(it => {
+                const prog = getProgressFor(it.mNumber);
+                const status = getDocItemStatus(it, prog);
+                if (status === 'over') {
+                    overItems.push(it);
+                } else if (status !== 'checked') {
+                    // ناقص لو لسه معندوش أي كمية مسجلة، أو عنده كمية جزئية لسه أقل من الفعلية
+                    const actualQtyNum = parseFloat(it.actualQty);
+                    const hasValidActualQty = !isNaN(actualQtyNum);
+                    if (!hasValidActualQty || prog.partialQty < actualQtyNum) {
+                        pendingItems.push(it);
+                    }
+                }
+            });
+
+            let html = '';
+            if (overItems.length === 0 && pendingItems.length === 0) {
+                html = `<div class="alert-banner green" style="background-color: var(--success-bg); border-color: var(--success-border); color: #065f46; margin-top:12px;">🎉 كل الأصناف مكتملة ومفيش أي تجاوز في الكميات!</div>`;
+            } else {
+                if (overItems.length > 0) {
+                    html += `<div class="alert-banner orange" style="margin-top:12px;">⚠️ يوجد ${overItems.length} صنف كميته المسجلة أكبر من الكمية الفعلية بالإذن (يحتاج مراجعة):</div>`;
+                    overItems.forEach(it => { html += renderDocItemBox(it); });
+                }
+                if (pendingItems.length > 0) {
+                    html += `<div class="alert-banner yellow" style="margin-top:12px;">⏳ يوجد ${pendingItems.length} صنف لسه ناقص أو مش متعلّم عليه بالكامل:</div>`;
+                    pendingItems.forEach(it => { html += renderDocItemBox(it); });
+                }
+            }
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        // استرجاع تقدم إذن سابق (لو موجود) بمجرد فتح التطبيق، عشان يفضل محفوظ حتى لو المستخدم قفل المتصفح
+        window.addEventListener('DOMContentLoaded', function() {
+            const restored = loadDocSession();
+            renderDocStatus();
+            renderDocPendingList();
+        });
 
         // --- Navigation (Swipe to go back via History API) ---
         function showHome() {
@@ -2531,6 +2895,14 @@
             document.getElementById('mainHomeBtn').style.display = 'flex';
             window.scrollTo({ top: 0, behavior: 'smooth' });
             history.pushState({page: modId}, "");
+            // مزامنة ظهور زرار المسح السريع (×) مع أي نص متبقي في خانات البحث عند فتح القسم
+            syncAllSearchClearBtns();
+        }
+
+        function syncAllSearchClearBtns() {
+            toggleClearBtn('companySearchInput', 'companySearchClearBtn');
+            toggleClearBtn('taresSearchInput', 'taresSearchClearBtn');
+            toggleClearBtn('docSearchInput', 'docSearchClearBtn');
         }
 
         window.addEventListener('popstate', (e) => {
@@ -2551,7 +2923,7 @@
             input.type = 'number';
             input.className = prefix + '-sample';
             input.placeholder = `وزن العينة ${count + 1}`;
-            input.oninput = prefix === 'nat' ? calculateNatural : calculateProcessed;
+            input.oninput = prefix === 'nat' ? calculateNatural : (prefix === 'pick' ? calculatePickles : calculateProcessed);
             wrapper.appendChild(input);
             list.appendChild(wrapper);
         }
@@ -2614,72 +2986,129 @@
             updateNaturalSteps(totalQty, avg, standard, actual, comp);
         }
 
-        function updateProcessedSteps(totalQty, min, avg, standard, actual, comp) {
+        // دالة مشتركة لحساب منطق "الاستاندر اليدوي مقابل أقل وزن" المستخدم في المستحلب والمخللات.
+        // الفرق الوحيد بين الاثنين هو "compQtyMultiplier": الكمية الكلية للمستحلب، وعدد العينات المصفاة فقط للمخللات.
+        function computeStandardBasedResult(samples, totalQty, manualStandard, compQtyMultiplier) {
+            const min = Math.min(...samples);
+            const sum = samples.reduce((acc, curr) => acc + curr, 0);
+            const avg = sum / samples.length;
+            const allStrictlyOverStandard = samples.every(s => s > manualStandard);
+            const appliedStandard = allStrictlyOverStandard ? manualStandard : min;
+            const actual = appliedStandard * totalQty;
+            const compPerUnit = avg - appliedStandard;
+            const comp = compPerUnit * compQtyMultiplier;
+            return { min, avg, allStrictlyOverStandard, appliedStandard, actual, compPerUnit, comp };
+        }
+
+        function updateProcessedSteps(totalQty, manualStandard, r) {
             const box = document.getElementById('procStepsBox');
-            if (isNaN(totalQty) || isNaN(min) || min <= 0) {
+            if (isNaN(totalQty) || isNaN(manualStandard) || manualStandard <= 0 || !r) {
                 box.innerHTML = `
                     <h4>💡 طريقة ومراحل الحساب:</h4>
                     <ol>
-                        <li>يتم تصفية العينات المختارة وتحديد الوزن الصافي لكل عينة في المعمل.</li>
-                        <li>يتم اختيار <b>أقل وزن تصفية</b> بين العينات وتعتمد عليه عملية الاستلام بالكامل.</li>
-                        <li><code>الكمية الفعلي</code> = أقل وزن تصفية × الكمية الكلية.</li>
-                        <li><b>شرط الاستاندر:</b> إذا كانت جميع العينات الموزونة أعلى من الوزن المعياري (الاستاندر)، يتم الاستلام على الاستاندر، ويُحسب التعويض بالمعادلة التالية لصالح الشركة: <code>التعويض = (متوسط العينات الصافي - الوزن الصافي اللي تم الاستلام عليه "الاستاندر") × الكمية الكلية</code>.</li>
+                        <li>يتم تصفية العينات المختارة وتحديد الوزن الصافي لكل عينة في المعمل، ويجب تحديد وزن استاندر معياري.</li>
+                        <li><b>لو كل العينات أعلى من الاستاندر (بصرامة):</b> يُعتمد الاستاندر اليدوي نفسه كوزن استلام. <code>الفعلي</code> = الاستاندر × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - الاستاندر. <code>التعويض الكلي</code> = تعويض الجردل الواحد × الكمية الكلية.</li>
+                        <li><b>لو فيه عينة واحدة على الأقل ≤ الاستاندر:</b> يُعتمد <b>أقل وزن موجود فعلياً</b> بدلاً من الاستاندر اليدوي. <code>الفعلي</code> = أقل وزن × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - أقل وزن. <code>التعويض الكلي</code> = تعويض الجردل الواحد × الكمية الكلية.</li>
                     </ol>
                 `;
                 return;
             }
-            const calcActual = min * totalQty;
+            const { min, avg, allStrictlyOverStandard, appliedStandard, actual, compPerUnit, comp } = r;
             let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل:</h4><ol>`;
-            html += `<li><b>تحديد الوزن المعتمد الفردي (أقل وزن تصفية):</b><br>أقل وزن صافي تم رصده بالعينة هو <code>${min.toFixed(3)}</code> كجم.</li>`;
-            html += `<li><b>حساب الوزن الإجمالي المقترح بالكامل:</b><br>الوزن الإجمالي = أقل وزن تصفية (<code>${min.toFixed(3)}</code> كجم) × الكمية الكلية الموردة (<code>${totalQty}</code> جردل/عبوة)<br>الوزن الإجمالي المقترح = <code>${calcActual.toFixed(3)}</code> كجم.</li>`;
+            html += `<li><b>مقارنة العينات بالاستاندر اليدوي المدخل (<code>${manualStandard.toFixed(3)}</code> كجم):</b><br>أقل وزن صافي تم رصده = <code>${min.toFixed(3)}</code> كجم.<br>${allStrictlyOverStandard
+                ? `بما أن <b>كل</b> العينات أعلى من الاستاندر بصرامة: يُعتمد <b>الاستاندر اليدوي نفسه</b> (<code>${manualStandard.toFixed(3)}</code> كجم) كوزن استلام.`
+                : `بما أن فيه عينة واحدة على الأقل أقل من أو تساوي الاستاندر: يُعتمد <b>أقل وزن موجود فعلياً</b> (<code>${min.toFixed(3)}</code> كجم) بدلاً من الاستاندر اليدوي.`}</li>`;
+            html += `<li><b>حساب الكمية الفعلي المعتمدة:</b><br>الفعلي المعتمد = الاستاندر المعتمد (<code>${appliedStandard.toFixed(3)}</code> كجم) × الكمية الكلية الموردة (<code>${totalQty}</code> جردل/عبوة)<br><code>الفعلي المعتمد</code> = <b><code>${actual.toFixed(3)}</code> كجم</b>.</li>`;
+            html += `<li><b>حساب متوسط كل العينات الصافي:</b><br>متوسط العينات = مجموع كل أوزان التصفية ÷ عددها = <b><code>${avg.toFixed(3)}</code> كجم</b>.</li>`;
 
-            if (standard && weightsAllOverStandard(standard)) {
-                html += `<li><b>مقارنة العينات بالاستاندر المعياري:</b><br>بما أن جميع العينات أعلى من الاستاندر (أقل عينة <code>${min.toFixed(3)}</code> كجم أكبر من الاستاندر المعياري <code>${standard.toFixed(3)}</code> كجم):<br>1. الوزن الفعلي المعتمد للاستلام يثبت على الاستاندر:<br><code>الفعلي المعتمد</code> = الاستاندر (<code>${standard.toFixed(3)}</code> كجم) × <code>${totalQty}</code> جردل/عبوة = <b><code>${actual.toFixed(3)}</code> كجم</b>.<br>2. يحسب الفارق كتعويض يستقطع للشركة بالمعادلة:<br><code>التعويض المستحق</code> = (متوسط العينات الصافي <code>${avg.toFixed(3)}</code> - الوزن الصافي اللي تم الاستلام عليه <code>${standard.toFixed(3)}</code>) × الكمية الكلية <code>${totalQty}</code><br><code>التعويض النهائي</code> = (<code>${avg.toFixed(3)}</code> - <code>${standard.toFixed(3)}</code>) × <code>${totalQty}</code> = <b><code>${comp.toFixed(3)}</code> كجم</b>.</li>`;
+            if (comp > 0.0000001) {
+                html += `<li><b>حساب تعويض الجردل الواحد:</b><br>تعويض الجردل الواحد = متوسط العينات (<code>${avg.toFixed(3)}</code> كجم) - الاستاندر المعتمد (<code>${appliedStandard.toFixed(3)}</code> كجم) = <b><code>${compPerUnit.toFixed(3)}</code> كجم</b>.</li>`;
+                html += `<li><b>حساب التعويض الكلي للشحنة:</b><br><code>التعويض الكلي</code> = تعويض الجردل الواحد (<code>${compPerUnit.toFixed(3)}</code> كجم) × الكمية الكلية (<code>${totalQty}</code> جردل/عبوة) = <b><code>${comp.toFixed(3)}</code> كجم</b>.</li>`;
             } else {
-                html += `<li><b>مقارنة العينات بالاستاندر المعياري:</b><br>${standard ? `بما أن هناك عينات أقل من أو تساوي وزن الاستاندر (أقل عينة صافي <code>${min.toFixed(3)}</code> كجم):<br>` : `بما أنه لم يتم تحديد وزن استاندر معياري:<br>`}يتم احتساب البضاعة بناءً على أقل وزن تصفية مباشرة:<br><code>الفعلي النهائي المعتمد</code> = أقل وزن تصفية (<code>${min.toFixed(3)}</code> كجم) × <code>${totalQty}</code> جردل/عبوة = <b><code>${actual.toFixed(3)}</code> كجم</b> (ولا يوجد تعويض).</li>`;
+                html += `<li><b>حساب التعويض:</b><br>بما أن متوسط العينات (<code>${avg.toFixed(3)}</code> كجم) يساوي الاستاندر المعتمد، فلا يوجد فرق يُحسب كتعويض: <b>التعويض = 0.000 كجم</b>.</li>`;
             }
             html += `</ol>`;
             box.innerHTML = html;
         }
 
-        function weightsAllOverStd(standard) {
-            const samples = Array.from(document.querySelectorAll('.proc-sample')).map(el => parseFloat(el.value)).filter(n => !isNaN(n) && n > 0);
-            return samples.every(s => s > standard);
-        }
-
         function calculateProcessed() {
             const totalQty = parseFloat(document.getElementById('procTotalQty').value);
-            const standard = parseFloat(document.getElementById('procStandard').value);
+            const manualStandard = parseFloat(document.getElementById('procStandard').value);
             const samples = Array.from(document.querySelectorAll('.proc-sample')).map(el => parseFloat(el.value)).filter(n => !isNaN(n) && n > 0);
             const resultsSec = document.getElementById('procResults');
-            if (!totalQty || samples.length === 0) {
+            if (!totalQty || !manualStandard || manualStandard <= 0 || samples.length === 0) {
                 resultsSec.style.display = 'none';
-                updateProcessedSteps(NaN, NaN, NaN, NaN, NaN, NaN);
+                updateProcessedSteps(NaN, NaN, null);
                 return;
             }
-            const min = Math.min(...samples);
-            const sum = samples.reduce((acc, curr) => acc + curr, 0);
-            const avg = sum / samples.length;
-            let actual = min * totalQty;
-            let comp = 0;
-            const allOver = standard && samples.every(s => s > standard);
-            if (allOver) {
-                actual = standard * totalQty;
-                comp = (avg - standard) * totalQty;
+            const r = computeStandardBasedResult(samples, totalQty, manualStandard, totalQty);
+            if (r.comp > 0.0000001) {
                 document.getElementById('procCompBox').style.display = 'block';
             } else {
                 document.getElementById('procCompBox').style.display = 'none';
             }
-            document.getElementById('procResMin').innerText = min.toFixed(3) + ' كجم';
-            document.getElementById('procResActual').innerText = actual.toFixed(3) + ' كجم';
-            document.getElementById('procResComp').innerText = comp.toFixed(3) + ' كجم';
+            document.getElementById('procResMinLabel').innerText = r.allStrictlyOverStandard ? 'الاستاندر المعتمد (الاستاندر اليدوي)' : 'الاستاندر المعتمد (أقل وزن تصفية)';
+            document.getElementById('procResMin').innerText = r.appliedStandard.toFixed(3) + ' كجم';
+            document.getElementById('procResActual').innerText = r.actual.toFixed(3) + ' كجم';
+            document.getElementById('procResComp').innerText = r.comp.toFixed(3) + ' كجم';
             resultsSec.style.display = 'block';
-            updateProcessedSteps(totalQty, min, avg, standard, actual, comp);
+            updateProcessedSteps(totalQty, manualStandard, r);
         }
 
-        function weightsAllOverStandard(std) {
-            const samples = Array.from(document.querySelectorAll('.proc-sample')).map(el => parseFloat(el.value)).filter(n => !isNaN(n) && n > 0);
-            return samples.every(s => s > std);
+        function updatePicklesSteps(totalQty, sampleCount, manualStandard, r) {
+            const box = document.getElementById('pickStepsBox');
+            if (isNaN(totalQty) || isNaN(manualStandard) || manualStandard <= 0 || !r) {
+                box.innerHTML = `
+                    <h4>💡 طريقة ومراحل الحساب:</h4>
+                    <ol>
+                        <li>يتم تصفية العينات المختارة وتحديد الوزن الصافي لكل عينة في المعمل، ويجب تحديد وزن استاندر معياري.</li>
+                        <li><b>لو كل العينات أعلى من الاستاندر (بصرامة):</b> يُعتمد الاستاندر اليدوي نفسه كوزن استلام. <code>الفعلي</code> = الاستاندر × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - الاستاندر.</li>
+                        <li><b>لو فيه عينة واحدة على الأقل ≤ الاستاندر:</b> يُعتمد <b>أقل وزن موجود فعلياً</b> بدلاً من الاستاندر اليدوي. <code>الفعلي</code> = أقل وزن × الكمية الكلية. <code>تعويض الجردل الواحد</code> = متوسط كل العينات - أقل وزن.</li>
+                        <li><b>الفرق الجوهري عن المستحلب:</b> <code>التعويض الكلي</code> = تعويض الجردل الواحد × <b>عدد العينات اللي اتصفّت فعلاً فقط</b> (مش الكمية الكلية المستلمة بالشحنة).</li>
+                    </ol>
+                `;
+                return;
+            }
+            const { min, avg, allStrictlyOverStandard, appliedStandard, actual, compPerUnit, comp } = r;
+            let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل:</h4><ol>`;
+            html += `<li><b>مقارنة العينات بالاستاندر اليدوي المدخل (<code>${manualStandard.toFixed(3)}</code> كجم):</b><br>أقل وزن صافي تم رصده = <code>${min.toFixed(3)}</code> كجم.<br>${allStrictlyOverStandard
+                ? `بما أن <b>كل</b> العينات أعلى من الاستاندر بصرامة: يُعتمد <b>الاستاندر اليدوي نفسه</b> (<code>${manualStandard.toFixed(3)}</code> كجم) كوزن استلام.`
+                : `بما أن فيه عينة واحدة على الأقل أقل من أو تساوي الاستاندر: يُعتمد <b>أقل وزن موجود فعلياً</b> (<code>${min.toFixed(3)}</code> كجم) بدلاً من الاستاندر اليدوي.`}</li>`;
+            html += `<li><b>حساب الكمية الفعلي المعتمدة:</b><br>الفعلي المعتمد = الاستاندر المعتمد (<code>${appliedStandard.toFixed(3)}</code> كجم) × الكمية الكلية الموردة (<code>${totalQty}</code> جردل/عبوة)<br><code>الفعلي المعتمد</code> = <b><code>${actual.toFixed(3)}</code> كجم</b>.</li>`;
+            html += `<li><b>حساب متوسط كل العينات الصافي:</b><br>متوسط العينات = مجموع كل أوزان التصفية ÷ عددها = <b><code>${avg.toFixed(3)}</code> كجم</b>.</li>`;
+
+            if (comp > 0.0000001) {
+                html += `<li><b>حساب تعويض الجردل الواحد:</b><br>تعويض الجردل الواحد = متوسط العينات (<code>${avg.toFixed(3)}</code> كجم) - الاستاندر المعتمد (<code>${appliedStandard.toFixed(3)}</code> كجم) = <b><code>${compPerUnit.toFixed(3)}</code> كجم</b>.</li>`;
+                html += `<li><b>حساب التعويض الكلي (لعدد العينات المصفّاة فقط، وليس الكمية الكلية):</b><br><code>التعويض الكلي</code> = تعويض الجردل الواحد (<code>${compPerUnit.toFixed(3)}</code> كجم) × عدد العينات المصفّاة (<code>${sampleCount}</code> عينة) = <b><code>${comp.toFixed(3)}</code> كجم</b>.</li>`;
+            } else {
+                html += `<li><b>حساب التعويض:</b><br>بما أن متوسط العينات (<code>${avg.toFixed(3)}</code> كجم) يساوي الاستاندر المعتمد، فلا يوجد فرق يُحسب كتعويض: <b>التعويض = 0.000 كجم</b>.</li>`;
+            }
+            html += `</ol>`;
+            box.innerHTML = html;
+        }
+
+        function calculatePickles() {
+            const totalQty = parseFloat(document.getElementById('pickTotalQty').value);
+            const manualStandard = parseFloat(document.getElementById('pickStandard').value);
+            const samples = Array.from(document.querySelectorAll('.pick-sample')).map(el => parseFloat(el.value)).filter(n => !isNaN(n) && n > 0);
+            const resultsSec = document.getElementById('pickResults');
+            if (!totalQty || !manualStandard || manualStandard <= 0 || samples.length === 0) {
+                resultsSec.style.display = 'none';
+                updatePicklesSteps(NaN, NaN, NaN, null);
+                return;
+            }
+            const r = computeStandardBasedResult(samples, totalQty, manualStandard, samples.length);
+            if (r.comp > 0.0000001) {
+                document.getElementById('pickCompBox').style.display = 'block';
+            } else {
+                document.getElementById('pickCompBox').style.display = 'none';
+            }
+            document.getElementById('pickResMinLabel').innerText = r.allStrictlyOverStandard ? 'الاستاندر المعتمد (الاستاندر اليدوي)' : 'الاستاندر المعتمد (أقل وزن تصفية)';
+            document.getElementById('pickResMin').innerText = r.appliedStandard.toFixed(3) + ' كجم';
+            document.getElementById('pickResActual').innerText = r.actual.toFixed(3) + ' كجم';
+            document.getElementById('pickResComp').innerText = r.comp.toFixed(3) + ' كجم';
+            resultsSec.style.display = 'block';
+            updatePicklesSteps(totalQty, samples.length, manualStandard, r);
         }
 
         function calculateRoumi() {
@@ -2936,51 +3365,58 @@
             calculateDry();
         }
 
-        function updateDrySteps(totalQty, sampleW, actual, comp, isDeficit, totalActualW, allowableW) {
+        function updateDrySteps(totalQty, sampleW, actual, isRejected, totalActualW, allowableW) {
             const box = document.getElementById('dryStepsBox');
             if (isNaN(totalQty) || totalQty <= 0) {
                 box.innerHTML = `
                     <h4>💡 طريقة ومراحل الحساب:</h4>
                     <ol>
                         <li>نأخذ عينة اختبار وزنها الإجمالي 100 كيلو من البضاعة الموردة بالكامل ونقوم بوزنها بدقة (أو وزن الشحنة بالكامل).</li>
-                        <li>تُعطى نسبة سماح حتى 1 كجم للعينة 100 كجم (أو 1% من الإجمالي).</li>
-                        <li>إذا قل الوزن عن حد السماح (أقل من 99 كجم للعينة أو 99% للشحنة): <b>يُلغى السماح ويتم خصم العجز بالكامل من الوزن الأساسي</b> (100 كجم أو الكمية المطلوبة).</li>
-                        <li><b>التعويض المستحق للشركة</b> يُجبر دائماً ويُقرب لأقرب رقم صحيح أعلى، ويُطرح من الكمية الكلية لحساب الفعلي.</li>
+                        <li>الحد الأدنى المقبول للكيلو الواحد هو 990 جرام (أي 99% من الوزن المكتوب بالفاتورة).</li>
+                        <li>إذا كان الوزن الفعلي (العينة أو الشحنة بالكامل) <b>يساوي أو أكبر</b> من الحد المسموح: تُستلم الكمية بالكامل كما هي مكتوبة بالفاتورة (بدون أي نقصان أو تعويض).</li>
+                        <li>إذا كان الوزن الفعلي <b>أقل</b> من الحد المسموح: <b>تُرفض الشحنة بالكامل</b>، وتصبح الكمية الفعلي المعتمدة = صفر.</li>
                     </ol>
                 `;
                 return;
             }
             if (!isNaN(sampleW) && sampleW > 0) {
                 let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل (عينة 100 كجم):</h4><ol>`;
-                html += `<li><b>تقييم عينة الـ 100 كجم الموزونة:</b><br>الوزن الفعلي للعينة = <b><code>${sampleW.toFixed(3)}</code> كجم</b>.</li>`;
-                if (isDeficit) {
-                    const deficit = 100 - sampleW;
-                    const numSamples = totalQty / 100;
-                    const rawComp = deficit * numSamples;
-                    html += `<li><b>حساب قيمة العجز المكتشف:</b><br>بما أن العينة أقل من الحد المسموح للاستلام الآمن (99 كجم)، <b>يُحسب العجز من الوزن الأساسي (100 كجم) بالكامل</b>:<br>العجز لكل 100 كجم = <code>100</code> - <code>${sampleW.toFixed(3)}</code> = <b><code>${deficit.toFixed(3)}</code> كجم عجز</b>.</li>`;
-                    html += `<li><b>حساب إجمالي التعويض المستقطع:</b><br>1. عدد العينات في الشحنة = <code>${totalQty.toFixed(1)}</code> ÷ 100 = <code>${numSamples.toFixed(2)}</code> عينة.<br>2. قيمة العجز الفعلي بالكامل = <code>${deficit.toFixed(3)}</code> × <code>${numSamples.toFixed(2)}</code> = <code>${rawComp.toFixed(3)}</code> كجم.<br>3. تطبيق التقريب لأعلى رقم صحيح = <b><code>${comp}</code> كجم تعويض</b>.</li>`;
-                    html += `<li><b>حساب الكمية الفعلي النهائي المعتمد:</b><br><code>الفعلي النهائي المعتمد</code> = <code>${totalQty.toFixed(1)}</code> - التعويض <code>${comp}</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
+                html += `<li><b>تقييم عينة الـ 100 كجم الموزونة:</b><br>الوزن الفعلي للعينة = <b><code>${sampleW.toFixed(3)}</code> كجم</b>. الحد الأدنى المقبول = <code>99.000</code> كجم (990 جرام/كيلو).</li>`;
+                if (isRejected) {
+                    html += `<li><b>قرار الرفض:</b><br>بما أن وزن العينة الفعلي (<code>${sampleW.toFixed(3)}</code> كجم) <b>أقل</b> من الحد المسموح (<code>99.000</code> كجم):<br><b>تُرفض الشحنة بالكامل ولا يوجد استلام جزئي أو تعويض</b>:<br><code>الكمية الفعلي المعتمدة</code> = <b><code>0.0</code> كجم (مرفوضة بالكامل)</b>.</li>`;
                 } else {
-                    html += `<li><b>تقييم العجز والقبول:</b><br>بما أن وزن العينة الفعلي (<code>${sampleW.toFixed(3)}</code> كجم) أكبر من أو يساوي الحد المقبول (<b>99 كجم</b>):<br>تستلم الشحنة كاملة فوراً وبدون أي استقطاعات لتعويض العجز:<br><code>الفعلي النهائي المعتمد</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
+                    html += `<li><b>قرار القبول:</b><br>بما أن وزن العينة الفعلي (<code>${sampleW.toFixed(3)}</code> كجم) <b>أكبر من أو يساوي</b> الحد المقبول (<code>99.000</code> كجم):<br>تُستلم الشحنة بالكامل كما هي مكتوبة بالفاتورة بدون أي نقصان:<br><code>الكمية الفعلي المعتمدة</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
                 }
                 html += `</ol>`;
                 box.innerHTML = html;
             } else if (!isNaN(totalActualW) && totalActualW > 0) {
                 let html = `<h4>💡 خطوات الحل الحسابية بالتفصيل (طريقة وزن الشحنة بالكامل):</h4><ol>`;
-                html += `<li><b>حساب الحد الأدنى المقبول (سماح 1%):</b><br>الحد الأدنى المقبول = <code>${totalQty.toFixed(1)}</code> × 0.99 = <b><code>${allowableW.toFixed(3)}</code> كجم</b>.</li>`;
+                html += `<li><b>حساب الحد الأدنى المقبول (99%):</b><br>الحد الأدنى المقبول = <code>${totalQty.toFixed(1)}</code> × 0.99 = <b><code>${allowableW.toFixed(3)}</code> كجم</b>.</li>`;
                 html += `<li><b>تقييم وزن الشحنة الفعلي بالكامل:</b><br>الوزن الفعلي المستلم لشحنتك = <b><code>${totalActualW.toFixed(3)}</code> كجم</b>.</li>`;
-                if (isDeficit) {
-                    const deficit = totalQty - totalActualW;
-                    html += `<li><b>حساب قيمة العجز المكتشف:</b><br>بما أن الوزن الفعلي أقل من الحد المقبول (<code>${allowableW.toFixed(3)}</code> كجم)، <b>يُحسب العجز من إجمالي الكمية المطلوبة كاملاً</b>:<br>إجمالي العجز الفعلي = <code>${totalQty.toFixed(3)}</code> - <code>${totalActualW.toFixed(3)}</code> = <b><code>${deficit.toFixed(3)}</code> كجم عجز</b>.</li>`;
-                    html += `<li><b>تطبيق شرط التقريب الإداري لأعلى رقم صحيح:</b><br>التعويض المطلوب خصمه = <b><code>${comp}</code> كجم تعويض</b>.</li>`;
-                    html += `<li><b>حساب الكمية الفعلي النهائي المعتمد:</b><br><code>الفعلي المعتمد</code> = <code>${totalQty.toFixed(1)}</code> - <code>${comp}</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
+                if (isRejected) {
+                    html += `<li><b>قرار الرفض:</b><br>بما أن الوزن الفعلي (<code>${totalActualW.toFixed(3)}</code> كجم) <b>أقل</b> من الحد المقبول (<code>${allowableW.toFixed(3)}</code> كجم):<br><b>تُرفض الشحنة بالكامل ولا يوجد استلام جزئي أو تعويض</b>:<br><code>الكمية الفعلي المعتمدة</code> = <b><code>0.0</code> كجم (مرفوضة بالكامل)</b>.</li>`;
                 } else {
-                    html += `<li><b>تقييم العجز والقبول:</b><br>بما أن الوزن الفعلي (<code>${totalActualW.toFixed(3)}</code> كجم) أكبر من أو يساوي الحد المقبول (<b><code>${allowableW.toFixed(3)}</code> كجم</b>):<br>تستلم الشحنة كاملة فوراً وبدون استقطاعات:<br><code>الفعلي المعتمد</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
+                    html += `<li><b>قرار القبول:</b><br>بما أن الوزن الفعلي (<code>${totalActualW.toFixed(3)}</code> كجم) <b>أكبر من أو يساوي</b> الحد المقبول (<code>${allowableW.toFixed(3)}</code> كجم):<br>تُستلم الشحنة بالكامل كما هي مكتوبة بالفاتورة بدون أي نقصان:<br><code>الكمية الفعلي المعتمدة</code> = <b><code>${actual.toFixed(1)}</code> كجم</b>.</li>`;
                 }
                 html += `</ol>`;
                 box.innerHTML = html;
             } else {
-                box.innerHTML = `<h4>💡 طريقة ومراحل الحساب للكميات:</h4><ol><li>الكمية الكلية المستلمة: <code>${totalQty.toFixed(1)}</code> كجم.</li><li>طريقة الحساب الحالية: <b>${currentDryMethod === 'sample' ? 'عينة الـ 100 كجم بنسبة سماح 1 كجم' : 'وزن الشحنة بالكامل بنسبة سماح 1%'}</b>.</li><li>يرجى إدخال الوزن المطلوب لعرض خطوات الحساب التفصيلية بالأرقام.</li></ol>`;
+                box.innerHTML = `<h4>💡 طريقة ومراحل الحساب للكميات:</h4><ol><li>الكمية الكلية المستلمة: <code>${totalQty.toFixed(1)}</code> كجم.</li><li>طريقة الحساب الحالية: <b>${currentDryMethod === 'sample' ? 'عينة الـ 100 كجم بحد أدنى مقبول 99 كجم' : 'وزن الشحنة بالكامل بحد أدنى مقبول 99%'}</b>.</li><li>يرجى إدخال الوزن المطلوب لعرض خطوات الحساب التفصيلية بالأرقام.</li></ol>`;
+            }
+        }
+
+        function renderDryDecision(isRejected) {
+            const banner = document.getElementById('dryDecisionBanner');
+            const actualBox = document.getElementById('dryActualBox');
+            const actualLabel = document.getElementById('dryResActualLabel');
+            if (isRejected) {
+                banner.innerHTML = `<div class="alert-banner red">🛑 الشحنة مرفوضة بالكامل: الوزن الفعلي أقل من الحد المسموح (990 جرام/كيلو)، ولا يوجد استلام جزئي أو تعويض.</div>`;
+                actualBox.className = 'result-box red';
+                actualLabel.innerText = 'الكمية الفعلي المعتمدة (مرفوضة بالكامل)';
+            } else {
+                banner.innerHTML = `<div class="alert-banner green">✅ الوزن الفعلي ضمن الحد المسموح: تُستلم الكمية كاملة كما هي بالفاتورة.</div>`;
+                actualBox.className = 'result-box green';
+                actualLabel.innerText = 'الكمية الفعلي المعتمدة (تُستلم كاملة)';
             }
         }
 
@@ -2992,12 +3428,11 @@
                 document.getElementById('dryMethodSegment').style.display = 'none';
                 document.getElementById('drySample100Group').style.display = 'block';
                 document.getElementById('dryTotalActualGroup').style.display = 'none';
-                updateDrySteps(NaN, NaN, NaN, NaN, false, NaN, NaN);
+                updateDrySteps(NaN, NaN, NaN, false, NaN, NaN);
                 return;
             }
             let actual = totalQty;
-            let comp = 0;
-            let isDeficit = false;
+            let isRejected = false;
             if (totalQty >= 100) {
                 document.getElementById('dryMethodSegment').style.display = 'flex';
                 if (currentDryMethod === 'sample') {
@@ -3006,46 +3441,31 @@
                     const sampleW = parseFloat(document.getElementById('drySampleWeight').value);
                     if (isNaN(sampleW) || sampleW <= 0) {
                         resultsSec.style.display = 'none';
-                        updateDrySteps(totalQty, NaN, NaN, NaN, false, NaN, NaN);
+                        updateDrySteps(totalQty, NaN, NaN, false, NaN, NaN);
                         return;
                     }
-                    isDeficit = sampleW < 99;
-                    if (isDeficit) {
-                        const numSamples = totalQty / 100;
-                        const deficit = 100 - sampleW;
-                        comp = safeCeil(deficit * numSamples);
-                        actual = totalQty - comp;
-                        document.getElementById('dryCompBox').style.display = 'block';
-                    } else {
-                        document.getElementById('dryCompBox').style.display = 'none';
-                    }
+                    isRejected = sampleW < 99;
+                    actual = isRejected ? 0 : totalQty;
                     document.getElementById('dryResActual').innerText = actual.toFixed(1) + ' كجم';
-                    document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
+                    renderDryDecision(isRejected);
                     resultsSec.style.display = 'block';
-                    updateDrySteps(totalQty, sampleW, actual, comp, isDeficit, NaN, NaN);
+                    updateDrySteps(totalQty, sampleW, actual, isRejected, NaN, NaN);
                 } else {
                     document.getElementById('drySample100Group').style.display = 'none';
                     document.getElementById('dryTotalActualGroup').style.display = 'block';
                     const totalActualW = parseFloat(document.getElementById('dryTotalActualWeight').value);
                     if (isNaN(totalActualW) || totalActualW <= 0) {
                         resultsSec.style.display = 'none';
-                        updateDrySteps(totalQty, NaN, NaN, NaN, false, NaN, NaN);
+                        updateDrySteps(totalQty, NaN, NaN, false, NaN, NaN);
                         return;
                     }
                     const allowableW = totalQty * 0.99;
-                    isDeficit = totalActualW < allowableW;
-                    if (isDeficit) {
-                        const deficit = totalQty - totalActualW; 
-                        comp = safeCeil(deficit); 
-                        actual = totalQty - comp;
-                        document.getElementById('dryCompBox').style.display = 'block';
-                    } else {
-                        document.getElementById('dryCompBox').style.display = 'none';
-                    }
+                    isRejected = totalActualW < allowableW;
+                    actual = isRejected ? 0 : totalQty;
                     document.getElementById('dryResActual').innerText = actual.toFixed(1) + ' كجم';
-                    document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
+                    renderDryDecision(isRejected);
                     resultsSec.style.display = 'block';
-                    updateDrySteps(totalQty, NaN, actual, comp, isDeficit, totalActualW, allowableW);
+                    updateDrySteps(totalQty, NaN, actual, isRejected, totalActualW, allowableW);
                 }
             } else {
                 document.getElementById('dryMethodSegment').style.display = 'none';
@@ -3054,23 +3474,16 @@
                 const totalActualW = parseFloat(document.getElementById('dryTotalActualWeight').value);
                 if (isNaN(totalActualW) || totalActualW <= 0) {
                     resultsSec.style.display = 'none';
-                    updateDrySteps(totalQty, NaN, NaN, NaN, false, NaN, NaN);
+                    updateDrySteps(totalQty, NaN, NaN, false, NaN, NaN);
                     return;
                 }
                 const allowableW = totalQty * 0.99;
-                isDeficit = totalActualW < allowableW;
-                if (isDeficit) {
-                    const deficit = totalQty - totalActualW;
-                    comp = safeCeil(deficit); 
-                    actual = totalQty - comp;
-                    document.getElementById('dryCompBox').style.display = 'block';
-                } else {
-                    document.getElementById('dryCompBox').style.display = 'none';
-                }
+                isRejected = totalActualW < allowableW;
+                actual = isRejected ? 0 : totalQty;
                 document.getElementById('dryResActual').innerText = actual.toFixed(1) + ' كجم';
-                document.getElementById('dryResComp').innerText = comp.toFixed(1) + ' كجم';
+                renderDryDecision(isRejected);
                 resultsSec.style.display = 'block';
-                updateDrySteps(totalQty, NaN, actual, comp, isDeficit, totalActualW, allowableW);
+                updateDrySteps(totalQty, NaN, actual, isRejected, totalActualW, allowableW);
             }
         }
 
